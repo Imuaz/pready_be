@@ -9,7 +9,18 @@
     "start": "node src/server.js",
     "test": "echo \"Tests coming soon\""
   },
-  "keywords": ["backend", "express", "api"],
+  "keywords": [
+    "backend",
+    "express",
+    "api"
+  ],
   "author": "Idris M. Y.",
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "dotenv": "^17.2.3",
+    "express": "^5.2.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.11"
+  }
 }
