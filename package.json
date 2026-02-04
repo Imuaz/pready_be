@@ -2,10 +2,10 @@
   "name": "master-be",
   "version": "1.0.0",
   "description": "Production-grade backend API",
-  "main": "scr/server.js",
+  "main": "src/server.js",
   "type": "module",
   "scripts": {
-    "dev": "node --watch scr/server.js",
+    "dev": "node --watch src/server.js",
     "start": "node src/server.js",
     "test": "echo \"Tests coming soon\""
   },
