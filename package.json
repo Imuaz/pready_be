@@ -1,0 +1,15 @@
+{
+  "name": "master-be",
+  "version": "1.0.0",
+  "description": "Production-grade backend API",
+  "main": "scr/server.js",
+  "type": "module",
+  "scripts": {
+    "dev": "node --watch scr/server.js",
+    "start": "node src/server.js",
+    "test": "echo \"Tests coming soon\""
+  },
+  "keywords": ["backend", "express", "api"],
+  "author": "Idris M. Y.",
+  "license": "MIT"
+}
