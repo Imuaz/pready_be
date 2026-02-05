@@ -1,11 +1,14 @@
+import { Request, Response, NextFunction } from "express";
+
+
 // Custom logging middleware
-const logger = (req, res, next) => {
+const logger = (req: Request, res: Response, next: NextFunction): void => {
     // Get current timestamp
-    const timestamp = new Date().toISOString();
+    const timestamp: string = new Date().toISOString();
 
     // Get request method
-    const method = req.method;
-    const url = req.url;
+    const method: string = req.method;
+    const url: string = req.url;
 
     // Log the current request
     console.log(`[${timestamp}] ${method} ${url}`);

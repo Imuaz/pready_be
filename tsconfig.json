@@ -1,0 +1,45 @@
+{
+  "compilerOptions": {
+    /* Language and Environment */
+    "target": "ES2022",                          // Use modern JavaScript features
+    "module": "NodeNext",                        // Use Node's module system
+    "moduleResolution": "NodeNext",              // How TypeScript finds modules
+    "lib": ["ES2022"],                           // Available JavaScript features
+    
+    /* Modules */
+    "rootDir": "./src",                          // Source code location
+    "outDir": "./dist",                          // Compiled JavaScript goes here
+    "baseUrl": "./src",                          // Base for absolute imports
+    "paths": {                                   // Path aliases (optional)
+      "@/*": ["./*"],
+      "@middleware/*": ["./middleware/*"],
+      "@routes/*": ["./routes/*"],
+      "@controllers/*": ["./controllers/*"],
+      "@models/*": ["./models/*"],
+      "@utils/*": ["./utils/*"],
+      "@config/*": ["./config/*"]
+    },
+    
+    /* Emit */
+    "sourceMap": true,                           // Generate .map files for debugging
+    "removeComments": true,                      // Remove comments in output
+    "esModuleInterop": true,                     // Better CommonJS/ES module compatibility
+    "forceConsistentCasingInFileNames": true,    // Enforce consistent file naming
+    
+    /* Type Checking */
+    "strict": true,                              // Enable all strict type checks
+    "noImplicitAny": true,                       // Error on 'any' type
+    "strictNullChecks": true,                    // Null and undefined are different
+    "strictFunctionTypes": true,                 // Strict function type checking
+    "noUnusedLocals": true,                      // Error on unused variables
+    "noUnusedParameters": true,                  // Error on unused function parameters
+    "noImplicitReturns": true,                   // Functions must return consistently
+    "skipLibCheck": true,                        // Skip type checking of .d.ts files
+    
+    /* Advanced */
+    "resolveJsonModule": true,                   // Import JSON files
+    "allowSyntheticDefaultImports": true         // Allow default imports from modules
+  },
+  "include": ["src/**/*"],                       // Files to compile
+  "exclude": ["node_modules", "dist", "**/*.test.ts"]  // Files to ignore
+}
