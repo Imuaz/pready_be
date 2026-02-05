@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from "express";
-import type { CustomError } from "@/types.js";
+import type { CustomError } from "@/types/type.d.ts";
 
 // Global error handling middleware
 const errorHandler = ( 
