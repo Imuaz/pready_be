@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 
 // Handles requests to undefined
-const notFound = (req: Request, res: Response, next: NextFunction): void => {
+const notFound = (req: Request, _res: Response, next: NextFunction): void => {
     // Create error object with custom properties
     const error = new Error(`Not Found - ${req.originalUrl}`) as Error & {
         statusCode: number;

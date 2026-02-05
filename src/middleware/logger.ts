@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from "express";
 
 
 // Custom logging middleware
-const logger = (req: Request, res: Response, next: NextFunction): void => {
+const logger = (req: Request, _res: Response, next: NextFunction): void => {
     // Get current timestamp
     const timestamp: string = new Date().toISOString();
 

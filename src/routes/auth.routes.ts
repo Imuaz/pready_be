@@ -9,7 +9,7 @@ const router = express.Router();
 // @access  Public
 router.post('/register', (req: Request<{}, {}, RegisterBody>, res: Response) => {
     // Now req.body is typed as ResgisterBody
-    const { email, password, name } = req.body;
+    const { email, name } = req.body;
 
     res.json({
         success: true,
@@ -21,8 +21,8 @@ router.post('/register', (req: Request<{}, {}, RegisterBody>, res: Response) => 
 // @route   POST /api/auth/login
 // @desc    Register a new user
 // @access  Public
-router.post('/register', (req: Request<{}, {}, LoginBody>, res: Response) => {
-    const { email, password, } = req.body;
+router.post('/login', (req: Request<{}, {}, LoginBody>, res: Response) => {
+    const { email } = req.body;
 
     res.json({
         success: true,
@@ -34,7 +34,7 @@ router.post('/register', (req: Request<{}, {}, LoginBody>, res: Response) => {
 // @route   POST /api/auth/logout
 // @desc    Logout user
 // @access  Private
-router.post('/logout', (req: Request, res: Response) => {
+router.post('/logout', (_req: Request, res: Response) => {
     res.json({
         success: true,
         message: 'Logout successfully'

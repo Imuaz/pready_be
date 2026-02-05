@@ -4,9 +4,9 @@ import type { CustomError } from "@/types/type.d.ts";
 // Global error handling middleware
 const errorHandler = ( 
     err: CustomError,
-    req: Request,
+    _req: Request,
     res: Response,
-    next: NextFunction
+    _next: NextFunction
 ): void => {
     // Log the error for debugging 
     console.error('ERROR:', err.message);
