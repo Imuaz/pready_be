@@ -1,32 +1,60 @@
 import { Request, Response, NextFunction } from "express";
-import type { CustomError } from "@/types/type.d.ts";
+import AppError from "@/utils/AppError.js";
 
 // Global error handling middleware
 const errorHandler = ( 
-    err: CustomError,
+    err: AppError | Error,
     _req: Request,
     res: Response,
     _next: NextFunction
 ): void => {
-    // Log the error for debugging 
-    console.error('ERROR:', err.message);
-    console.error('Stack:', err.stack);
 
+    // Default error values
+    let statusCode: number = 500;
+    let message: string = 'Internal Server Error';
+    let isOperational: boolean = false;
 
-    // Determine status code
-    // If error has statusCode property, use it, otherwise default to 500
-    const statusCode: number = err.statusCode || 500;
+    // Handle our custom AppError
+    if (err instanceof AppError) {
+        statusCode = err.statusCode;
+        message = err.message;
+        isOperational = err.isOperational;
+    }
 
-    // Determine error message
-    // In production, hide internal errors from users
-    const message: string = process.env.NODE_ENV === 'production' ? 'Something went wrong': err.message;
+    // Handle Mongoose validation errors
+    if (err.name === 'ValidatioanError') {
+        statusCode = 400;
+        message = err.message;
+        isOperational = true;
+    }
+
+    // Handle Mongoose duplicate key error
+    if ('code' in err && err.code === 110000) {
+        statusCode = 409; // Conflict
+        message = 'Duplicate field value entered'
+        isOperational = true;
+    }
+
+    // Handle mongoose invalid ObjectId
+    if (err.name === 'CastError') {
+        statusCode = 400;
+        message = 'Invalid ID format';
+        isOperational = true;
+    }
+
+    // Log non-operationa errors (bugs)
+    if (!isOperational) {
+        console.error('💥 UNEXPECTED ERROR:', err)
+    }
 
     // Send error response
     res.status(statusCode).json({
         success: false,
         error: message,
-        // Only show stack trace in development
-        ...(process.env.NODE_ENV === 'development' && { stack: err.stack})
+        ...(process.env.NODE_ENV === 'development' && {
+            stack: err.stack,
+            details: err
+        })
     });
 };
 
