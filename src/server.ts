@@ -1,6 +1,9 @@
 import "dotenv/config";
 import express, { Express, Request, Response, NextFunction } from "express";
 
+// Import database connection
+import connectDB from '@/config/database.js';
+
 // Import middleware
 import logger from "@/middleware/logger.js";
 import errorHandler from "@/middleware/errorHandler.js";
@@ -14,6 +17,8 @@ import userRoutes from "@/routes/user.routes.js";
 const app: Express = express();
 const PORT: number = parseInt(process.env.PORT || '5000', 10);
 const NODE_ENV: string = process.env.NODE_ENV || 'development';
+
+connectDB();
 
 // Middlewares
 app.use(express.json());
@@ -48,21 +53,13 @@ app.use(errorHandler);
 
 
 // Start server
-app.listen(PORT, () => {
-    console.log('==================================');
-    console.log(`Server Status: RUNNING`);
-    console.log(`Environment: ${NODE_ENV}`);
-    console.log(`Visit: http://localhost:${PORT}`);
-    console.log(`TypeScript: ENABLED`)
-    console.log('===================================');
-    console.log('📋 Available Routes:');
-    console.log('   GET  /');
-    console.log('   POST /api/auth/register');
-    console.log('   POST /api/auth/login');
-    console.log('   POST /api/auth/logout');
-    console.log('   GET  /api/users/profile');
-    console.log('   PUT  /api/users/profile');
-    console.log('   GET  /api/users');
-    console.log('   GET  /api/test-error');
-    console.log('=================================');
+app.listen(PORT, (): void => {
+  console.log('=================================');
+  console.log(`🚀 Server Status: RUNNING`);
+  console.log(`📡 Port: ${PORT}`);
+  console.log(`🌍 Environment: ${NODE_ENV}`);
+  console.log(`🔗 URL: http://localhost:${PORT}`);
+  console.log(`💙 TypeScript: ENABLED`);
+  console.log(`🍃 MongoDB: CONNECTING...`);
+  console.log('=================================');
 });

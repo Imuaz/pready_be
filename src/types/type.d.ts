@@ -1,3 +1,4 @@
+import { Document } from "mongoose";
 export interface CustomError extends Error {
     statusCode?: number;
 };
@@ -24,4 +25,18 @@ export interface UserProfile {
 export interface UpdateProfileBody {
     name?: string;
     email?: string;
+}
+
+// Define the User interface for TypeScript
+export interface IUser extends Document {
+    name: string;
+    email: string;
+    password: string;
+    role: 'user' | 'admin' | 'moderator';
+    isEmailVerified: boolean;
+    verificationToken?: string;
+    resetPasswordToken?: string;
+    resetPasswordExpire?: Date;
+    createdAt: Date;
+    updatedAt: Date;
 }
