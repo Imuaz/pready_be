@@ -12,7 +12,7 @@ import notFound from "@/middleware/notFound.js";
 // Import routes
 import authRoutes from "@/routes/auth.routes.js";
 import userRoutes from "@/routes/user.routes.js";
-// ...existing code...
+import testRoutes from "@/routes/test.routes.js";
 
 const app: Express = express();
 const PORT: number = parseInt(process.env.PORT || '5000', 10);
@@ -39,6 +39,7 @@ app.get('/', (_req: Request, res: Response): void => {
 
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/test', testRoutes);
 
 app.get('/api/test-error', (_req: Request, _res: Response, next: NextFunction) => {
     const error = new Error('This is a test error') as Error & { statusCode: number };
