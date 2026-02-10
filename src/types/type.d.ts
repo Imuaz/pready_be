@@ -40,3 +40,23 @@ export interface IUser extends Document {
     createdAt: Date;
     updatedAt: Date;
 }
+
+// Interface for registration data
+export interface RegisterData {
+  name: string;
+  email: string;
+  password: string;
+}
+
+// Interface for the registration result
+export interface RegisterResult {
+  user: Omit<IUser, 'password'>;
+}
+
+// Interface for register request body
+export interface RegisterRequestBody {
+  name: string;
+  email: string;
+  password: string;
+  confirmPassword: string;
+}
