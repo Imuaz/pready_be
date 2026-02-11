@@ -8,6 +8,7 @@ import {
     getMe
 } from "@controllers/auth.controller.js";
 import validate from "@/middleware/validate.js";
+import { protect } from "@/middleware/auth.js";
 import { registerValidator, loginValidator } from "@/validators/auth.validators.js";
 
 const router = express.Router();
@@ -35,14 +36,14 @@ router.post('/refresh', refreshToken);
 
 // @route   POST /api/auth/logout
 // @access  Private
-router.post('/logout', logout);
+router.post('/logout', protect, logout);
 
 // @route   POST /api/auth/logout-all
 // @access  Private
-router.post('/logout-all', logoutAll);
+router.post('/logout-all', protect, logoutAll);
 
 // @route   GET /api/auth/me
 // @access  Private
-router.get('/me', getMe);
+router.get('/me', protect, getMe);
 
 export default router;

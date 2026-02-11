@@ -189,11 +189,6 @@ const getMe = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const userId = req.user?.id;
-
-    if (!userId) {
-      throw new AppError('Not authenticated', 401);
-    }
 
     res.status(200).json({
       success: true,
