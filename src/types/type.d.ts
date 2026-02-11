@@ -4,9 +4,10 @@ export interface CustomError extends Error {
 };
 
 export interface RegisterBody {
+    name: string;
     email: string;
     password: string;
-    name: string;
+    confirmPassword: string;
 }
 
 export interface LoginBody {
@@ -29,17 +30,22 @@ export interface UpdateProfileBody {
 
 // Define the User interface for TypeScript
 export interface IUser extends Document {
-    name: string;
-    email: string;
-    password: string;
-    role: 'user' | 'admin' | 'moderator';
-    isEmailVerified: boolean;
-    verificationToken?: string;
-    resetPasswordToken?: string;
-    resetPasswordExpire?: Date;
-    createdAt: Date;
-    updatedAt: Date;
+  name: string;
+  email: string;
+  password: string;
+  role: 'user' | 'admin' | 'moderator';
+  isEmailVerified: boolean;
+  verificationToken?: string;
+  verificationTokenExpire?: Date;
+  resetPasswordToken?: string;
+  resetPasswordExpire?: Date;
+  refreshTokens: IRefreshToken[];
+  lastLogin?: Date;
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
 }
+
 
 // Interface for registration data
 export interface RegisterData {
@@ -59,4 +65,53 @@ export interface RegisterRequestBody {
   email: string;
   password: string;
   confirmPassword: string;
+}
+
+
+// Interface for refresh token subdocument
+export interface IRefreshToken {
+  token: string;
+  createdAt: Date;
+  expiresAt: Date;
+  ipAddress?: string;
+  userAgent?: string;
+}
+
+// Token payload interface
+export interface TokenPayload {
+  id: string;
+  email: string;
+  role: string;
+}
+
+// Token pair interface
+export interface TokenPair {
+  accessToken: string;
+  refreshToken: string;
+}
+
+export interface LoginData {
+    email: string;
+    password: string;
+    ipAddress?: string;
+    userAgent?: string;
+}
+
+export interface AuthResult {
+    user: {
+        id: string;
+        name: string;
+        email: string;
+        role: string;
+        isEmailVerified: boolean;
+    };
+    tokens: TokenPair;
+}
+
+export interface RefreshTokenBody {
+  refreshToken: string;
+}
+
+export interface LogoutBody {
+  refreshToken: string;
 }

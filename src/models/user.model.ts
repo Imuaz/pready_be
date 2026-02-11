@@ -1,8 +1,31 @@
 import mongoose, { Schema, Model } from "mongoose";
-import type { IUser } from "@/types/type.js";
+import type { IUser, IRefreshToken } from "@/types/type.js";
 
 
-// Define the User schema
+// Refresh token subdocument schema
+const RefreshTokenSchema = new Schema<IRefreshToken>({
+  token: {
+    type: String,
+    required: true
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now
+  },
+  expiresAt: {
+    type: Date,
+    required: true
+  },
+  ipAddress: {
+    type: String
+  },
+  userAgent: {
+    type: String
+  }
+});
+
+
+// Main User Schema
 const UserSchema: Schema<IUser> = new Schema(
   {
     name: {
@@ -26,7 +49,7 @@ const UserSchema: Schema<IUser> = new Schema(
       type: String,
       required: [true, 'Please provide a password'],
       minlength: [6, 'Password must be at least 6 characters'],
-      select: false // Don't return password by default
+      select: false
     },
     role: {
       type: String,
@@ -41,6 +64,10 @@ const UserSchema: Schema<IUser> = new Schema(
       type: String,
       select: false
     },
+    verificationTokenExpire: {
+      type: Date,
+      select: false
+    },
     resetPasswordToken: {
       type: String,
       select: false
@@ -48,10 +75,24 @@ const UserSchema: Schema<IUser> = new Schema(
     resetPasswordExpire: {
       type: Date,
       select: false
+    },
+    // Array of refresh tokens
+    // Supports multiple devices!
+    refreshTokens: {
+      type: [RefreshTokenSchema],
+      default: [],
+      select: false
+    },
+    lastLogin: {
+      type: Date
+    },
+    isActive: {
+      type: Boolean,
+      default: true
     }
   },
   {
-    timestamps: true, // Automatically adds createdAt and updatedAt
+    timestamps: true,
     toJSON: { virtuals: true },
     toObject: { virtuals: true }
   }
@@ -60,6 +101,7 @@ const UserSchema: Schema<IUser> = new Schema(
 // Create indexes for better query performance
 UserSchema.index({ email: 1 });
 UserSchema.index({ createdAt: -1 });
+UserSchema.index({ 'refreshTokens.token': 1 });
 
 // Export the model
 const User: Model<IUser> = mongoose.model<IUser>('User', UserSchema);
