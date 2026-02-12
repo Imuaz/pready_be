@@ -73,6 +73,16 @@ const registerUser = async (data: RegisterData): Promise<AuthResult> => {
     }
   });
 
+  // Send verification email automatically
+  try {
+    await sendVerification((user._id as unknown as string).toString());
+    console.log('📧 Verification email sent to:', user.email);
+  } catch (error) {
+    console.error('❌ Failed to send verification email:', error);
+    // Don't fail registration if email fails
+    // User can request a new verification email later
+  }
+
   return {
     user: {
       id: (user._id as unknown as string).toString(),
