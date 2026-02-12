@@ -4,7 +4,11 @@ import {
   loginUser,
   refreshUserToken,
   logoutUser,
-  logoutAllDevices
+  logoutAllDevices,
+  sendVerification,
+  verifyEmail,
+  forgotPassword,
+  resetPassword
 } from "@/services/auth.service.js";
 import type {
   RegisterBody,
@@ -200,4 +204,134 @@ const getMe = async (
   }
 };
 
-export { register, login, refreshToken, logout, logoutAll, getMe };
+
+/**
+ * @route   POST /api/auth/send-verification
+ * @desc    Send a verification email to user
+ * @access  Private
+ */
+const sendVerificationEmail = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const userId = req.user?.id;
+
+    if (!userId) {
+      throw new AppError('Not authenticated', 401);
+    }
+
+    await sendVerification(userId);
+
+    res.status(200).json({
+      success: true,
+      message: 'Verification email sent! Please check your inbox.'
+    });
+
+  } catch (error) {
+    next(error);
+  }
+};
+
+
+/**
+ * @route   POST /api/auth/verify-email
+ * @desc    Verify user email
+ * @access  Public
+ */
+const verifyUserEmail = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const { token } = req.query;
+
+    if (!token || typeof token !== 'string') {
+      throw new AppError('Verification token is required', 400);
+    }
+
+    await verifyEmail(token);
+
+    res.status(200).json({
+      success: true,
+      message: 'Email verified successfully! You can now access all features.'
+    });
+
+  } catch (error) {
+    next(error);
+  }
+};
+
+
+/**
+ * @route   POST /api/auth/forgot-password
+ * @desc    Forgot user password
+ * @access  Public
+ */
+const forgotUserPassword = async (
+  req: Request<{}, {}, { email: string }>,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const { email } = req.body;
+
+    await forgotPassword(email);
+
+    // Always return success (security: don't reveal if email exists)
+    res.status(200).json({
+      success: true,
+      message: 'If that email exists, a password reset link has been sent.'
+    });
+
+  } catch (error) {
+    next(error);
+  }
+};
+
+
+/**
+ * @route   POST /api/auth/reset-password
+ * @desc    Reset user password
+ * @access  Public
+ */
+const resetUserPassword = async (
+  req: Request<{}, {}, { password: string; confirmPassword: string }>,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const { token } = req.query;
+    const { password } = req.body;
+
+    if (!token || typeof token !== 'string') {
+      throw new AppError('Reset token is required', 400);
+    }
+
+    await resetPassword(token, password);
+
+    res.status(200).json({
+      success: true,
+      message: 'Password reset successful! Please login with your new password.'
+    });
+
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Export all functions
+export {
+  register,
+  login,
+  refreshToken,
+  logout,
+  logoutAll,
+  getMe,
+  sendVerificationEmail,
+  verifyUserEmail,
+  forgotUserPassword,
+  resetUserPassword
+};
