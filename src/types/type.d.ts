@@ -115,3 +115,21 @@ export interface RefreshTokenBody {
 export interface LogoutBody {
   refreshToken: string;
 }
+
+// Email transporter interface
+export interface EmailConfig {
+  host: string;
+  port: number;
+  auth: {
+    user: string;
+    pass: string;
+  };
+}
+
+// Email options interface
+export interface EmailOptions {
+  to: string;
+  subject: string;
+  text?: string;
+  html: string;
+}
