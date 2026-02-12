@@ -26,8 +26,8 @@ const hashToken = (token: string): string => {
  * @param milliseconds - Time until expiry in ms
  * @returns Date object for expiry
  */
-const getTokenExpiry = (milliseconds: number): Date => {
+const tokenExpiry = (milliseconds: number): Date => {
   return new Date(Date.now() + milliseconds);
 };
 
-export { generateToken, hashToken, getTokenExpiry };
+export { generateToken, hashToken, tokenExpiry };

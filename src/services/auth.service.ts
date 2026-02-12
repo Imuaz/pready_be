@@ -13,6 +13,16 @@ import {
   verifyRefreshToken,
   getTokenExpiry
 } from "@/utils/jwt.js";
+import {
+  generateToken,
+  hashToken,
+  tokenExpiry
+} from "@/utils/tokens.js";
+import {
+  sendVerificationEmail,
+  sendPasswordChangedEmail,
+  sendPasswordResetEmail
+} from "@/utils/email.js";
 
 
 /**
@@ -244,11 +254,152 @@ const logoutAllDevices = async (userId: string): Promise<void> => {
   });
 };
 
+/**
+ * Send verification email to user
+ * @param userId - User's ID
+ */
+const sendVerification = async (userId: string): Promise<void> => {
+  const user = await User.findById(userId);
+
+  if (!user) {
+    throw new AppError('User not found', 404);
+  }
+
+  if (user.isEmailVerified) {
+    throw new AppError('Email is already verified', 400);
+  }
+
+  // Generate verification token
+  const verificationToken = generateToken();
+  const hashedToken = hashToken(verificationToken);
+
+  // Save hashed token and expiry to database
+  const tokenExpire = tokenExpiry(
+    parseInt(process.env.EMAIL_VERIFY_TOKEN_EXPIRE || '3600000', 10)
+  );
+
+  await User.findByIdAndUpdate(userId, {
+    verificationToken: hashedToken,
+    verificationTokenExpire: tokenExpire
+  });
+
+  // Send email with plain token (not hashed)
+  await sendVerificationEmail(user.email, user.name, verificationToken);
+};
+
+/**
+ * Verify email with token
+ * @param token - Verification token from email
+ */
+const verifyEmail = async (token: string): Promise<void> => {
+  // Hash the token to compare with DB
+  const hashedToken = hashToken(token);
+
+  // Find user with this token that hasn't expired
+  const user = await User.findOne({
+    verificationToken: hashedToken,
+    verificationTokenExpire: { $gt: Date.now() }
+  }).select('+verificationToken +verificationTokenExpire');
+
+  if (!user) {
+    throw new AppError(
+      'Invalid or expired verification token. Please request a new one.',
+      400
+    );
+  }
+
+  // Mark email as verified and remove token
+  user.isEmailVerified = true;
+  user.verificationToken = undefined;
+  user.verificationTokenExpire = undefined;
+  await user.save();
+};
+
+/**
+ * Send password reset email
+ * @param email - User's email address
+ */
+const forgotPassword = async (email: string): Promise<void> => {
+  const user = await User.findOne({ email: email.toLowerCase() });
+
+  // Security: Don't reveal if email exists or not
+  // Same response for both cases
+  if (!user) {
+    // Still return success to prevent user enumeration
+    return;
+  }
+
+  // Generate reset token
+  const resetToken = generateToken();
+  const hashedToken = hashToken(resetToken);
+
+  // Save hashed token and expiry
+  const tokenExpire = tokenExpiry(
+    parseInt(process.env.PASSWORD_RESET_TOKEN_EXPIRE || '3600000', 10)
+  );
+
+  await User.findByIdAndUpdate(user._id, {
+    resetPasswordToken: hashedToken,
+    resetPasswordExpire: tokenExpire
+  });
+
+  // Send email
+  await sendPasswordResetEmail(user.email, user.name, resetToken);
+};
+
+/**
+ * Reset password with token
+ * @param token - Reset token from email
+ * @param newPassword - New password
+ */
+const resetPassword = async (
+  token: string,
+  newPassword: string
+): Promise<void> => {
+  // Hash token to compare with DB
+  const hashedToken = hashToken(token);
+
+  // Find user with valid token
+  const user = await User.findOne({
+    resetPasswordToken: hashedToken,
+    resetPasswordExpire: { $gt: Date.now() }
+  }).select('+resetPasswordToken +resetPasswordExpire +password +refreshTokens');
+
+  if (!user) {
+    throw new AppError(
+      'Invalid or expired reset token. Please request a new one.',
+      400
+    );
+  }
+
+  // Hash new password
+  const saltRounds = 12;
+  const hashedPassword = await bcrypt.hash(newPassword, saltRounds);
+
+  // Update password and clear reset token
+  user.password = hashedPassword;
+  user.resetPasswordToken = undefined;
+  user.resetPasswordExpire = undefined;
+
+  // Clear all refresh tokens (logout from all devices for security)
+  user.refreshTokens = [];
+
+  await user.save();
+
+  // Send confirmation email
+  await sendPasswordChangedEmail(user.email, user.name);
+};
+
+// Export all new functions
 export {
   registerUser,
   loginUser,
   refreshUserToken,
   logoutUser,
   logoutAllDevices,
-  verifyPassword
+  verifyPassword,
+  sendVerification,
+  verifyEmail,
+  forgotPassword,
+  resetPassword
 };
