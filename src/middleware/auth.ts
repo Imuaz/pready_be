@@ -13,9 +13,7 @@ const protect = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    // ─────────────────────────────────
-    // STEP 1: Extract token from header
-    // ─────────────────────────────────
+    // Extract token from header
     const authHeader = req.headers.authorization;
 
     // Check header exists and starts with 'Bearer '
@@ -34,21 +32,17 @@ const protect = async (
       throw new AppError('Invalid token format', 401);
     }
 
-    // ─────────────────────────────────
-    // STEP 2: Verify token
-    // ─────────────────────────────────
+    // Verify token
     // This throws AppError if token is invalid or expired
     const decoded = verifyAccessToken(token);
 
-    // ─────────────────────────────────
-    // STEP 3: Find user in database
-    // ─────────────────────────────────
+    // Find user in database
     // Why check DB if JWT is valid?
     // - User might have been deleted
     // - User might have been deactivated
     // - Role might have changed since token was issued
     const user = await User.findById(decoded.id).select(
-      'name email role isEmailVerified isActive'
+      'name email role isEmailVerified isActive isBanned banReason'
     );
 
     if (!user) {
@@ -58,9 +52,7 @@ const protect = async (
       );
     }
 
-    // ─────────────────────────────────
-    // STEP 4: Check account is active
-    // ─────────────────────────────────
+    // Check account is active
     if (!user.isActive) {
       throw new AppError(
         'Your account has been deactivated. Please contact support.',
@@ -68,9 +60,13 @@ const protect = async (
       );
     }
 
-    // ─────────────────────────────────
-    // STEP 5: Attach user to request
-    // ─────────────────────────────────
+    // Check if user is banned
+    if ( user.isBanned) {
+      throw new AppError(
+        `Your account has been banned. Reason: ${user.banReason || 'No reason provided'}`, 403
+      );
+    }
+    // Attach user to request
     // Now any route after this middleware
     // can access req.user
     req.user = {
@@ -120,10 +116,10 @@ const optionalAuth = async (
     try {
       const decoded = verifyAccessToken(token);
       const user = await User.findById(decoded.id).select(
-        'name email role isEmailVerified isActive'
+        'name email role isEmailVerified isActive isBanned'
       );
 
-      if (user && user.isActive) {
+      if (user && user.isActive && !user.isBanned) {
         req.user = {
           id: (user._id as unknown as string).toString(),
           name: user.name,
@@ -203,4 +199,31 @@ const requireVerified = (
   next();
 };
 
-export { protect, optionalAuth, authorize, requireVerified };
+/**
+ * Prevent users from modifying their own role
+ * MUST be used AFTER protect middleware
+ *
+ * Usage: router.post('/sensitive', protect, requireVerified, handler)
+ */
+const preventSelfRoleChange = (
+  req: Request,
+  _res: Response,
+  next: NextFunction
+): void => {
+  const targetUserId = req.params.id;
+  const currentUserId = req.user?.id;
+
+  if (targetUserId === currentUserId && req.body.role) {
+    next(new AppError('You cannot change your own role', 403));
+    return;
+  }
+
+  next()
+}
+export {
+  protect,
+  optionalAuth,
+  authorize,
+  requireVerified,
+  preventSelfRoleChange
+};
