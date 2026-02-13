@@ -147,3 +147,42 @@ export interface EmailOptions {
   text?: string;
   html: string;
 }
+
+export interface GetUsersQuery {
+  page?: number;
+  limit?: number;
+  role?: string;
+  isActive?: boolean;
+  isBanned?: boolean;
+  search?: string;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
+}
+
+export interface UpdateUserData {
+  name?: string;
+  email?: string;
+  role?: string;
+  bio?: string;
+  phone?: string;
+  profileImage?: string;
+  address?: {
+    street?: string;
+    city?: string;
+    state?: string;
+    country?: string;
+    zipCode?: string;
+  };
+}
+
+export interface UserStats {
+  totalUsers: number;
+  activeUsers: number;
+  bannedUsers: number;
+  verifiedUsers: number;
+  usersByRole: {
+    user: number;
+    moderator: number;
+    admin: number;
+  };
+}
