@@ -89,6 +89,32 @@ const UserSchema: Schema<IUser> = new Schema(
     isActive: {
       type: Boolean,
       default: true
+    },
+    isBanned: {
+      type: Boolean,
+      default: false
+    },
+    banReason: String,
+    bannedBy: {
+      type: Schema.Types.ObjectId,
+      ref: 'User'
+    },
+    bannedAt: Date,
+    profileImage: String,
+    bio: {
+      type: String,
+      maxlength: [500, 'Bio cannot be more than 500 characters']
+    },
+    phone: {
+      type: String,
+      match: [/^\+?[\d\s\-()]+$/, 'Please provide a valid phone number']
+    },
+    address: {
+      street: String,
+      city: String,
+      state: String,
+      country: String,
+      zipCode: String
     }
   },
   {
@@ -100,8 +126,15 @@ const UserSchema: Schema<IUser> = new Schema(
 
 // Create indexes for better query performance
 UserSchema.index({ email: 1 });
+UserSchema.index({ role: 1 });
 UserSchema.index({ createdAt: -1 });
+UserSchema.index({ isActive: 1, isBanned: 1});
 UserSchema.index({ 'refreshTokens.token': 1 });
+
+// Virtual for full name display (example)
+UserSchema.virtual('displayName').get(function() {
+  return this.name;
+});
 
 // Export the model
 const User: Model<IUser> = mongoose.model<IUser>('User', UserSchema);
