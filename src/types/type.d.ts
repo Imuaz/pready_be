@@ -42,6 +42,20 @@ export interface IUser extends Document {
   refreshTokens: IRefreshToken[];
   lastLogin?: Date;
   isActive: boolean;
+  isBanned: boolean;
+  banReason?: string;
+  bannedBy?: mongoose.Types.ObjectId;
+  bannedAt?: Date;
+  profileImage?: string;
+  bio?: string;
+  phone?: string;
+  address?: {
+    street?: string;
+    city?: string;
+    state?: string;
+    country?: string;
+    zipCode?: string;
+  };
   createdAt: Date;
   updatedAt: Date;
 }
