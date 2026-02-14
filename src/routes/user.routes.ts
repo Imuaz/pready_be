@@ -14,7 +14,9 @@ import {
   banUserAccount,
   unbanUserAccount,
   updateUserRole,
-  getStatistics
+  getStatistics,
+  getUserProfile,
+  updateProfile
 } from "@/controllers/user.controller.js";
 import {
   userIdValidator,
@@ -28,6 +30,24 @@ import {
 const router = express.Router();
 
 // Specific routes must come BEFORE parameterized routes
+
+// @route GET/api/users/profile/me
+// @decs Get own profile
+// @access Private
+router.get(
+  '/profile/me',
+  protect,
+  getUserProfile
+);
+
+// @route PUT /api/users/profile/me
+// @decs Update own profile
+// @access Private
+router.put(
+  '/profile/me',
+  protect,
+  updateProfile
+);
 
 // @route GET /api/users/stats
 // @desc Get user statistics
@@ -46,27 +66,6 @@ router.get('/health', (_req: Request, res: Response): void => {
     res.json({
         success:true,
         message: 'Users service is runnign'
-    });
-});
-
-// @route GET /api/users/profile
-// @desc Get user profile
-// @access Private
-router.get('/profile', protect, (req: Request, res: Response): void => {
-    res.json({
-        success: true,
-        data: { user: req.user }
-    });
-});
-
-// @route PUT /api/users/profile
-// @desc Update user profile
-// @access Private
-router.put('/profile', protect, (req: Request, res: Response): void => {
-    res.json({
-        success: true,
-        message: 'TD: Profile updated',
-        data:req.body
     });
 });
 
