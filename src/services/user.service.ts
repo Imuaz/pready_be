@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import User from "@/models/user.model.js";
+import Activity from "@/models/activity.model.js";
 import type {
     GetUsersQuery,
     UpdateUserData,
@@ -188,6 +189,13 @@ const banUser = async (
     user.banReason = reason;
     user.bannedBy = new mongoose.Types.ObjectId(bannedByUserId);
     user.bannedAt = new Date();
+
+    await Activity.create({
+      user: bannedByUserId,
+      action: 'user_banned',
+      targetUser: userId,
+      details: reason
+    });
 
     // Clear all refresh tokens (force logout)
     user.refreshTokens = [];
