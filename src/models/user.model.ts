@@ -1,5 +1,5 @@
 import mongoose, { Schema, Model } from "mongoose";
-import type { IUser, IRefreshToken } from "@/types/type.js";
+import type { IUser, IRefreshToken } from "@/types/user.js";
 
 
 // Refresh token subdocument schema

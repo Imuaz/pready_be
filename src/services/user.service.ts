@@ -5,7 +5,7 @@ import type {
     GetUsersQuery,
     UpdateUserData,
     UserStats
-} from "@/types/type.js";
+} from "@/types/user.js";
 import AppError from "@/utils/AppError.js";
 
 

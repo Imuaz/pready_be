@@ -15,7 +15,7 @@ import type {
   LoginBody,
   RefreshTokenBody,
   LogoutBody
-} from "@/types/type.js";
+} from "@/types/user.js";
 import AppError from "@/utils/AppError.js";
 
 

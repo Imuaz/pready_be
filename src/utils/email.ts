@@ -1,6 +1,6 @@
 import createTransporter from "@/config/email.js";
 import AppError from "./AppError.js";
-import type { EmailOptions } from "@/types/type.js";
+import type { EmailOptions } from "@/types/common.js";
 import {
     verificationMailTemplate,
     passwordResetMailTemplate,

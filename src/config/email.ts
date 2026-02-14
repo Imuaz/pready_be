@@ -1,5 +1,5 @@
 import nodemailer, { Transporter } from "nodemailer";
-import type { EmailConfig } from "@/types/type.js";
+import type { EmailConfig } from "@/types/common.js";
 
 
 /**

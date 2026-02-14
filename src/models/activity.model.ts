@@ -1,5 +1,5 @@
 import mongoose, { Schema, Model } from "mongoose";
-import type { IActivity } from "@/types/type.js";
+import type { IActivity } from "@/types/activity.js";
 
 
 const ActivitySchema: Schema<IActivity> = new Schema(

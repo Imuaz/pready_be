@@ -3,11 +3,13 @@ import User from "@/models/user.model.js";
 import AppError from "@/utils/AppError.js";
 import type {
   RegisterData,
-  TokenPair,
   AuthResult,
-  TokenPayload,
   LoginData
-} from "@/types/type.js";
+} from "@/types/user.js";
+import type {
+  TokenPair,
+  TokenPayload
+} from "@/types/common.js";
 import {
   generateTokenPair,
   verifyRefreshToken,

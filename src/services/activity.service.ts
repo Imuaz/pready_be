@@ -3,7 +3,7 @@ import Activity from "@/models/activity.model.js";
 import type {
     CreateActivityParams,
     GetActivitiesQuery
-} from "@/types/type.js";
+} from "@/types/activity.js";
 
 
 /**

@@ -1,6 +1,6 @@
 import jwt from "jsonwebtoken";
 import AppError from "./AppError.js";
-import type { TokenPayload, TokenPair } from "@/types/type.js";
+import type { TokenPayload, TokenPair } from "@/types/common.js";
 
 
 /**
