@@ -263,6 +263,56 @@ const getStatistics = async (
   }
 };
 
+/**
+ * @route   GET /api/users/profile/me
+ * @desc    Get own profile
+ * @access  Private
+ */
+const getUserProfile = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const userId = req.user?.id
+    const user = await getUserById(userId as string);
+
+    res.status(200).json({
+      success: true,
+      data: { user }
+    });
+  } catch (error) {
+    next(error); 
+  }
+}
+
+/**
+ * @route   PUT /api/users/profile/me
+ * @desc    Update own profile
+ * @access  Private
+ */
+const updateProfile = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const userId = req.user?.id;
+    
+    // Remove role if user tries to change it
+    delete req.body.role;
+
+    const user = await updateUser(userId as string, req.body);
+
+    res.status(200).json({
+      success: true,
+      message: 'Profile updated successfully',
+      data: { user }
+    });
+  } catch (error) {
+    next(error);
+  }
+};
 
 export {
   getUsers,
@@ -272,5 +322,7 @@ export {
   banUserAccount,
   unbanUserAccount,
   updateUserRole,
-  getStatistics
+  getStatistics,
+  getUserProfile,
+  updateProfile
 };
