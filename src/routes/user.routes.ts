@@ -27,6 +27,8 @@ import {
 
 const router = express.Router();
 
+// Specific routes must come BEFORE parameterized routes
+
 // @route GET /api/users/stats
 // @desc Get user statistics
 // @access Private + Admin
@@ -36,6 +38,71 @@ router.get(
   authorize('admin'),
   getStatistics
 );
+
+// @route GET /api/users/health
+// @desc Health check for users service
+// @access Public
+router.get('/health', (_req: Request, res: Response): void => {
+    res.json({
+        success:true,
+        message: 'Users service is runnign'
+    });
+});
+
+// @route GET /api/users/profile
+// @desc Get user profile
+// @access Private
+router.get('/profile', protect, (req: Request, res: Response): void => {
+    res.json({
+        success: true,
+        data: { user: req.user }
+    });
+});
+
+// @route PUT /api/users/profile
+// @desc Update user profile
+// @access Private
+router.put('/profile', protect, (req: Request, res: Response): void => {
+    res.json({
+        success: true,
+        message: 'TD: Profile updated',
+        data:req.body
+    });
+});
+
+// @route GET /api/users/verified-only
+// @desc Verify email access endpoint
+// @access Private + Email Verified
+router.get(
+  '/verified-only',
+  protect,
+  requireVerified,
+  (_req: Request, res: Response): void => {
+    res.json({
+      success: true,
+      message: 'You have a verified email! Access granted.',
+      data: { user: _req.user }
+    });
+  }
+);
+
+// @route GET /api/users/admin-or-mod
+// @desc Admin or moderator access endpoint
+// @access Private + Admin or Moderator
+router.get(
+  '/admin-or-mod',
+  protect,
+  authorize('admin', 'moderator'),
+  (_req: Request, res: Response): void => {
+    res.json({
+      success: true,
+      message: 'Admin or Moderator access granted',
+      data: { user: _req.user }
+    });
+  }
+);
+
+// Parameterized routes come AFTER specific routes
 
 // @route GET /api/users
 // @desc Get all users
@@ -114,68 +181,5 @@ router.patch(
   validate([...userIdValidator, ...changeRoleValidator]),
   updateUserRole
 );
-// @route GET /api/users/health
-// @desc Health check for users service
-// @access Public
-router.get('/health', (_req: Request, res: Response): void => {
-    res.json({
-        success:true,
-        message: 'Users service is runnign'
-    });
-});
-
-// @route   GET /api/users/profile
-// @desc    Get user profile
-// @access  Private
-router.get('/profile', protect, (req: Request, res: Response): void => {
-    res.json({
-        success: true,
-        data: { user: req.user }
-    });
-});
-
-// @route   PUT /api/users/profile
-// @desc    Update user profile
-// @access  Private
-router.put('/profile', protect, (req: Request, res: Response): void => {
-    res.json({
-        success: true,
-        message: 'TD: Profile updated',
-        data:req.body
-    });
-});
-
-// @route GET /api/users/verified-only
-// @desc Verify email access endpoint
-// @access Private + Email Verified
-router.get(
-  '/verified-only',
-  protect,
-  requireVerified,
-  (_req: Request, res: Response): void => {
-    res.json({
-      success: true,
-      message: 'You have a verified email! Access granted.',
-      data: { user: _req.user }
-    });
-  }
-);
-
-// @route GET /api/users/admin-or-mod
-// @desc Admin or moderator access endpoint
-// @access Private + Admin or Moderator
-router.get(
-  '/admin-or-mod',
-  protect,
-  authorize('admin', 'moderator'),
-  (_req: Request, res: Response): void => {
-    res.json({
-      success: true,
-      message: 'Admin or Moderator access granted',
-      data: { user: _req.user }
-    });
-  }
-);
-
 
 export default router;
