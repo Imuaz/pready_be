@@ -13,6 +13,8 @@ import notFound from "@/middleware/notFound.js";
 import authRoutes from "@/routes/auth.routes.js";
 import userRoutes from "@/routes/user.routes.js";
 import testRoutes from "@/routes/test.routes.js";
+import activityRoutes from '@/routes/activity.routes.js';
+import { cleanupOldActivities } from "./services/activity.service.js";
 
 const app: Express = express();
 const PORT: number = parseInt(process.env.PORT || '5000', 10);
@@ -40,6 +42,7 @@ app.get('/', (_req: Request, res: Response): void => {
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/test', testRoutes);
+app.use('/api/activities', activityRoutes);
 
 app.get('/api/test-error', (_req: Request, _res: Response, next: NextFunction) => {
     const error = new Error('This is a test error') as Error & { statusCode: number };
@@ -63,4 +66,12 @@ app.listen(PORT, (): void => {
   console.log(`💙 TypeScript: ENABLED`);
   console.log(`🍃 MongoDB: CONNECTING...`);
   console.log('=================================');
+
+  // Run cleanup daily at midnight
+  setInterval(async () => {
+    const now = new Date();
+    if (now.getHours() === 0 && now.getMinutes() === 0){
+      await cleanupOldActivities(90); // 90 days
+    }
+  }, 60000); // Checevery minute
 });
