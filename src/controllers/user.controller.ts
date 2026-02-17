@@ -99,7 +99,11 @@ const updateUserProfile = async (
       throw new AppError('Not authenticated', 401);
     }
 
-    const user = await updateUser(id as string, req.body);
+    const user = await updateUser(
+      id as string,
+      requestingUserId,
+      req.body
+    );
 
     res.status(200).json({
       success: true,
@@ -190,7 +194,13 @@ const unbanUserAccount = async (
 ): Promise<void> => {
   try {
     const { id } = req.params;
-    const user = await unbanUser(id as string);
+    const unbannedByUserId = req.user?.id;
+
+    if (!unbannedByUserId) {
+      throw new AppError('Not authenticated', 401);
+    }
+
+    const user = await unbanUser(id as string, unbannedByUserId)
 
     res.status(200).json({
       success: true,
@@ -297,12 +307,16 @@ const updateProfile = async (
   next: NextFunction
 ) => {
   try {
-    const userId = req.user?.id;
+    const { id } = req.params;
+    const requestingUserId = req.user?.id;
     
     // Remove role if user tries to change it
     delete req.body.role;
 
-    const user = await updateUser(userId as string, req.body);
+    const user = await updateUser(
+      id as string,
+      requestingUserId as string,
+      req.body);
 
     res.status(200).json({
       success: true,
