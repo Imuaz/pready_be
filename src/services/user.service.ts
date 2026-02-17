@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 import User from "@/models/user.model.js";
 import Activity from "@/models/activity.model.js";
+import { logActivity } from "./activity.service.js";
 import type {
     GetUsersQuery,
     UpdateUserData,
@@ -87,15 +88,22 @@ const getUserById = async (userId: string) => {
 /**
  * Update a particular user data
  * @param userId - Target user id
+ * @param requestingUserId - User performin the update
  * @param updateData - user data to be updated
  * @returns Any updated user
  */
 const updateUser = async (
     userId: string,
-    updateData: UpdateUserData,
+    requestingUserId: string,
+    updateData: UpdateUserData
 ) => {
     if (!mongoose.Types.ObjectId.isValid(userId)) {
         throw new AppError('Invalid user ID format', 400);
+    }
+
+    // Prevent self-update
+    if (userId === requestingUserId) {
+        throw new AppError('You cannot update your own account', 403);
     }
 
     const user = await User.findById(userId);
@@ -120,6 +128,14 @@ const updateUser = async (
     // Update user
     Object.assign(user, updateData);
     await user.save();
+
+    // LOG PROFILE UPDATE
+    await logActivity({
+      userId: requestingUserId,
+      targetUserId: userId,
+      action: 'profile_updated',
+      details: `Profile updated for user: ${user.email}`
+    });
 
     return user;
 }
@@ -146,6 +162,14 @@ const deleteUser = async (userId: string, requestingUserId: string) => {
     }
 
     await User.findByIdAndDelete(userId);
+
+    // LOG USER DELETION
+    await logActivity ({
+      userId: requestingUserId,
+      action: 'user_deleted',
+      targetUserId: userId,
+      details: `Deleted user: ${user.email}`
+    });
 
     return { message: 'User deleted successfully'};
 }
@@ -201,14 +225,24 @@ const banUser = async (
     user.refreshTokens = [];
     await user.save();
 
+
+    // LOG USER BAN
+    await logActivity({
+      userId: bannedByUserId,
+      action: 'user_banned',
+      targetUserId: userId,
+      details: `Banned user: ${user.email}. Reason: ${reason}`
+    });
+
     return user;
 }
 
 /**
  * Unban a particular user
  * @param userId - user to be unbanned id
+ * @param unbannedByUserId - User performing th unban
  */
-const unbanUser = async (userId: string) => {
+const unbanUser = async (userId: string, unbannedByUserId: string) => {
   if (!mongoose.Types.ObjectId.isValid(userId)) {
     throw new AppError('Invalid user ID format', 400);
   }
@@ -229,6 +263,15 @@ const unbanUser = async (userId: string) => {
   user.bannedAt = undefined;
 
   await user.save();
+
+  // LOG USER UNBAN
+  await logActivity({
+    userId: unbannedByUserId,
+    action: 'user_unbanned',
+    targetUserId: userId,
+    details: `Unbanned user: ${user.email}`
+
+  });
 
   return user;
 };
@@ -264,8 +307,18 @@ const changeUserRole = async (
     throw new AppError('User not found', 404);
   }
 
+  const oldRole = user.role;
+
   user.role = newRole as 'user' | 'admin' | 'moderator';
   await user.save();
+
+  // LOG ROLE CHANGE
+  await logActivity({
+    userId: requestingUserId,
+    action: 'role_changed',
+    targetUserId: userId,
+    details: `Change role for ${user.email} from ${oldRole}`
+  });
 
   return user;
 };
