@@ -1,6 +1,7 @@
 import bcrypt from "bcryptjs";
 import User from "@/models/user.model.js";
 import AppError from "@/utils/AppError.js";
+import { logActivity } from "./activity.service.js";
 import type {
   RegisterData,
   AuthResult,
@@ -75,6 +76,13 @@ const registerUser = async (data: RegisterData): Promise<AuthResult> => {
     }
   });
 
+  // LOG ACITIVITY
+  await logActivity({
+    userId: (user._id as unknown as string).toString(),
+    action: 'register',
+    details: `New user registered: ${user.email}`
+  });
+
   // Send verification email automatically
   try {
     await sendVerification((user._id as unknown as string).toString());
@@ -111,7 +119,7 @@ const verifyPassword = async (
 };
 
 /**
- * Log user in
+ * Login  user
  * @param data - User data
  * @returns an authenticated user
  */
@@ -137,6 +145,15 @@ const loginUser = async (data: LoginData): Promise<AuthResult> => {
   // Verify password
   const isPasswordValid = await bcrypt.compare(password, user.password);
   if (!isPasswordValid){
+    // LOG FAILED LOGIN ATTEMPT
+  await logActivity({
+    userId: (user._id as unknown as string),
+    action: 'login',
+    details: 'Failed login attempt - incorrect password',
+    ipAddress,
+    userAgent
+  });
+
     throw new AppError('Invalid email or password', 401);
   }
   
@@ -168,6 +185,15 @@ const loginUser = async (data: LoginData): Promise<AuthResult> => {
     },
     // Update last login
     lastLogin: now
+  });
+
+  // LOG SUCCESSFUl LOGIN
+  await logActivity({
+    userId: (user._id as unknown as string).toString(),
+    action: 'login',
+    details: 'Successful login',
+    ipAddress,
+    userAgent
   });
 
   return {
@@ -253,6 +279,13 @@ const logoutUser = async (
   await User.findByIdAndUpdate(userId, {
     $pull: {refreshTokens: {token: refreshToken }}
   });
+
+  // LOG LOGOUT
+  await logActivity({
+    userId,
+    action: 'logout',
+    details: 'User logged out from device'
+  });
 };
 
 /**
@@ -325,6 +358,13 @@ const verifyEmail = async (token: string): Promise<void> => {
   user.verificationToken = undefined;
   user.verificationTokenExpire = undefined;
   await user.save();
+
+  // LOG EMAIL VERIFICATION
+  await logActivity({
+    userId: (user._id as unknown as string).toString(),
+    action: 'email_verified',
+    details: `Email address: ${user.email} verified successfully`
+  });
 };
 
 /**
@@ -385,7 +425,7 @@ const resetPassword = async (
   }
 
   // Hash new password
-  const saltRounds = 12;
+  const saltRounds = parseInt(process.env.SALTROUNDS || '10', 10)
   const hashedPassword = await bcrypt.hash(newPassword, saltRounds);
 
   // Update password and clear reset token
@@ -397,6 +437,13 @@ const resetPassword = async (
   user.refreshTokens = [];
 
   await user.save();
+
+  // LOG PASSWORD RESET
+  await logActivity({
+    userId: (user._id as unknown as string).toString(),
+    action: 'password_reset',
+    details: 'Password reset successfully via email link'
+  });
 
   // Send confirmation email
   await sendPasswordChangedEmail(user.email, user.name);
