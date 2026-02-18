@@ -24,6 +24,11 @@ const ApiKeySchema: Schema<IApiKey> = new Schema({
     description: {
         type: [String],
         default: ['read'],
+        maxlength: [500, 'Description cannot exceed 500 characters']
+    },
+    permissions: {
+        type: [String],
+        default: ['read'],
         enum:['read', 'write', 'delete', 'admin']
     },
     usageCount: {
