@@ -12,6 +12,11 @@ declare global {
         role: string;
         isEmailVerified: boolean;
       };
+      apiKey?: {
+        id: string;
+        name: string;
+        permissions: string[];
+      };
     }
   }
 }
