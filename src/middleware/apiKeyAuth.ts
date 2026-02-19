@@ -55,6 +55,9 @@ const authenticateApiKey = (requiredPermission?: string) => {
                 name: result.apiKey!.name,
                 permissions: result.apiKey!.permissions
             };
+
+            // Proceed to the next middleware/handler
+            next();
         } catch (error) {
             next(error);
         }
