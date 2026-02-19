@@ -1,4 +1,4 @@
-import rateLimit from "express-rate-limit";
+import rateLimit, { ipKeyGenerator } from "express-rate-limit";
 import { Request } from "express";
 import AppError from "@/utils/AppError.js";
 
@@ -69,8 +69,8 @@ const apiKeyRateLimiter = rateLimit({
         if(req.apiKey) {
             return req.apiKey.id;
         }
-        // Otherwise use IP
-        return req.ip || 'unknown';
+        // Otherwise use normalized IP (safe for IPv6)
+        return ipKeyGenerator(req);
     },
     handler: (_req, _res, _next, _options) => {
         throw new AppError(

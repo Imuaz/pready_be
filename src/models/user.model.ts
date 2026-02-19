@@ -1,5 +1,6 @@
 import mongoose, { Schema, Model } from "mongoose";
-import type { IUser, IRefreshToken } from "@/types/user.js";
+import type { IUser } from "@/types/user.js";
+import type { IRefreshToken } from "@/types/common.js";
 
 
 // Refresh token subdocument schema
@@ -125,7 +126,6 @@ const UserSchema: Schema<IUser> = new Schema(
 );
 
 // Create indexes for better query performance
-UserSchema.index({ email: 1 });
 UserSchema.index({ role: 1 });
 UserSchema.index({ createdAt: -1 });
 UserSchema.index({ isActive: 1, isBanned: 1});

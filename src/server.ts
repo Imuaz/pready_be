@@ -28,6 +28,21 @@ const app: Express = express();
 const PORT: number = parseInt(process.env.PORT || '5000', 10);
 const NODE_ENV: string = process.env.NODE_ENV || 'development';
 
+const parseTrustProxy = (raw: string | undefined): boolean | number | string | undefined => {
+  if (!raw) return undefined;
+  const v = raw.trim();
+  const lower = v.toLowerCase();
+
+  if (["0", "false", "no", "off"].includes(lower)) return false;
+  if (["1", "true", "yes", "on"].includes(lower)) return true;
+
+  if (/^\d+$/.test(v)) return Number(v);
+  return v;
+};
+
+const trustProxy = parseTrustProxy(process.env.TRUST_PROXY) ?? false;
+app.set("trust proxy", trustProxy);
+
 connectDB();
 
 // Middlewares
@@ -83,6 +98,7 @@ app.listen(PORT, (): void => {
   console.log(`🚀 Server Status: RUNNING`);
   console.log(`📡 Port: ${PORT}`);
   console.log(`🌍 Environment: ${NODE_ENV}`);
+  console.log(`🛰️  Trust Proxy: ${String(trustProxy)}`);
   console.log(`🔗 URL: http://localhost:${PORT}`);
   console.log(`💙 TypeScript: ENABLED`);
   console.log(`🍃 MongoDB: CONNECTING...`);
