@@ -10,12 +10,12 @@ import {
 const router = express.Router();
 
 // @route GET /api/activities/me
-// @decs Get current user's activity
+// @desc  Get current user's activity
 // @access Private
 router.get('/me', protect, getMyActivities);
 
 // @route GET /api/activities/stats
-// @decs Get activity statistice
+// @desc  Get activity statistics
 // @access Private + Admin
 router.get(
     '/stats',
@@ -25,7 +25,7 @@ router.get(
 );
 
 // @route GET /api/activities
-// @decs Get all activities with filters
+// @desc  Get all activities with filters
 // @access Private + Admin
 router.get(
     '/',

@@ -16,8 +16,9 @@ import {
 
 
 /**
- * Upload file
- * @param data - File data to upload
+ * Upload a file to cloud (Cloudinary) or local storage and persist metadata in DB.
+ * @param data - File buffer, userId, and optional category, isPublic, useCloud
+ * @returns Created file document
  */
 const uploadFile = async (data: UploadFileData): Promise<IFile> => {
     const {
@@ -74,9 +75,10 @@ const uploadFile = async (data: UploadFileData): Promise<IFile> => {
 };
 
 /**
- * Upload Profile picture
- * @param file - file to upload
- * @param userId - User ID
+ * Upload and optimize a profile picture (resize, WebP), upload to Cloudinary, save to DB.
+ * @param file - Multer file (buffer required)
+ * @param userId - Owner user ID
+ * @returns Created file document with category 'profile'
  */
 const uploadProfilePicture = async (
     file: Express.Multer.File,
@@ -116,9 +118,10 @@ const uploadProfilePicture = async (
 };
 
 /**
- * Get user files
- * @param userId - User ID
- * @param category - File category
+ * List files owned by a user, optionally filtered by category. Sorted by createdAt desc.
+ * @param userId - Owner user ID
+ * @param category - Optional category filter (profile, document, image, video, other)
+ * @returns Array of file documents (lean)
  */
 const getUserFiles = async (
     userId: string,
@@ -140,9 +143,11 @@ const getUserFiles = async (
 };
 
 /**
- * Delete file
- * @param fileId - File ID
- * @param userId - User ID
+ * Delete a file: from Cloudinary or local disk, then from DB. Only owner can delete.
+ * @param fileId - File document ID
+ * @param userId - Must match file's uploadedBy
+ * @throws {AppError} 400 - Invalid file ID
+ * @throws {AppError} 404 - File not found
  */
 const deleteFile = async (
     fileId: string,
@@ -177,8 +182,11 @@ const deleteFile = async (
 };
 
 /**
- * Get file by ID
- * @param fileId - File ID
+ * Fetch a single file by ID with uploadedBy populated (name, email).
+ * @param fileId - File document ID
+ * @returns File document (lean)
+ * @throws {AppError} 400 - Invalid file ID
+ * @throws {AppError} 404 - File not found
  */
 const getFileById = async (fileId: string): Promise<IFile> => {
     if (!mongoose.Types.ObjectId.isValid(fileId)) {
