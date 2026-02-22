@@ -22,6 +22,7 @@ import testRoutes from "@/routes/test.routes.js";
 import activityRoutes from '@/routes/activity.routes.js';
 import apiKeyRoutes from "@/routes/apiKey.routes.js";
 import demoRoutes from "@/routes/demo.routes.js";
+import fileRoutes from "@/routes/file.routes.js";
 
 
 const app: Express = express();
@@ -79,6 +80,7 @@ app.use('/api/test', testRoutes);
 app.use('/api/activities', activityRoutes);
 app.use('/api/api-keys', apiKeyRoutes);
 app.use('/api/demo', demoRoutes);
+app.use('/api/files', fileRoutes);
 
 app.get('/api/test-error', (_req: Request, _res: Response, next: NextFunction) => {
     const error = new Error('This is a test error') as Error & { statusCode: number };
@@ -110,6 +112,7 @@ app.listen(PORT, (): void => {
   console.log('   Activities: /api/activities/*');
   console.log('   API Keys: /api/api-keys/*');
   console.log('   Demo: /api/demo/*');
+  console.log('   Files: /api/files/*');
   console.log('=================================');
 
   // Run cleanup daily at midnight

@@ -66,11 +66,11 @@ const apiKeyRateLimiter = rateLimit({
     },
     keyGenerator: (req: Request) => {
         // Use API key as identifier if available
-        if(req.apiKey) {
+        if (req.apiKey) {
             return req.apiKey.id;
         }
-        // Otherwise use normalized IP (safe for IPv6)
-        return ipKeyGenerator(req);
+        // Otherwise use normalized IP (safe for IPv6) — ipKeyGenerator expects IP string, not Request
+        return ipKeyGenerator(req.ip ?? req.socket?.remoteAddress ?? '0.0.0.0');
     },
     handler: (_req, _res, _next, _options) => {
         throw new AppError(
