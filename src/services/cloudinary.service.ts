@@ -10,7 +10,11 @@ import type {
 
 
 /**
- * Upload buffer to Cloudinary
+ * Upload a buffer to Cloudinary via stream. Supports folder, resourceType, transformation, tags.
+ * @param buffer - File content buffer
+ * @param options - Folder, resourceType, transformation array, tags
+ * @returns Upload result with url, secureUrl, publicId, format, width, height
+ * @throws {AppError} 500 - Upload failed or no result
  */
 const uploadToCloudinary = async (
     buffer: Buffer,
@@ -59,7 +63,10 @@ const uploadToCloudinary = async (
 };
 
 /**
- * Delete from Cloudinary
+ * Delete an asset from Cloudinary by public ID.
+ * @param publicId - Cloudinary public ID of the asset
+ * @param resourceType - 'image' | 'video' | 'raw' (default 'image')
+ * @throws {AppError} 500 - Delete failed
  */
 const deleteFromCloudinary = async (
     publicId: string,
@@ -76,7 +83,10 @@ const deleteFromCloudinary = async (
 };
 
 /**
- * Upload profile picture to Cloudinary
+ * Upload a profile picture buffer to Cloudinary with resize and quality options.
+ * @param buffer - Image buffer
+ * @param userId - User ID (used in tags)
+ * @returns Object with url and publicId
  */
 const uploadProfilePicture = async (
     buffer: Buffer,

@@ -1,6 +1,12 @@
 import "dotenv/config";
+import path from "node:path";
+import { fileURLToPath } from "url";
 import express, { Express, Request, Response, NextFunction } from "express";
 import { cleanupOldActivities } from "./services/activity.service.js";
+
+// ES module __dirname equivalent
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Import database connection
 import connectDB from '@/config/database.js';
@@ -50,6 +56,9 @@ connectDB();
 app.use(express.json());
 app.use(express.urlencoded( { extended: true }));
 
+// Serve static files (uploaded files)
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+
 // Custom logger
 app.use(logger);
 
@@ -68,7 +77,7 @@ app.get('/', (_req: Request, res: Response): void => {
   });
 });
 
-// Auth routes (with strict rate limitin)
+// Auth routes (with strict rate limiting)
 app.use('/api/auth/login', authLimiter);
 app.use('/api/auth/register', authLimiter);
 app.use('/api/auth/forgot-password', passwordResetLimiter);
@@ -121,5 +130,5 @@ app.listen(PORT, (): void => {
     if (now.getHours() === 0 && now.getMinutes() === 0){
       await cleanupOldActivities(90); // 90 days
     }
-  }, 60000); // Checevery minute
+  }, 60000); // Check every minute
 });

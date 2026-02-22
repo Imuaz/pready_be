@@ -10,7 +10,9 @@ import AppError from "@/utils/AppError.js";
 
 
 /**
- * Upload single file
+ * Upload a single file. Body: category, isPublic, useCloud (all optional). Multer field: file.
+ * @throws {AppError} 401 - Not authenticated
+ * @throws {AppError} 400 - No file uploaded
  */
 const upload = async (
     req: Request,
@@ -50,7 +52,9 @@ const upload = async (
 };
 
 /**
- * Upload profile picture
+ * Upload and set profile picture. Optimizes image and stores in cloud. Multer field: file.
+ * @throws {AppError} 401 - Not authenticated
+ * @throws {AppError} 400 - No file uploaded
  */
 const uploadProfilePic = async (
     req: Request,
@@ -81,7 +85,8 @@ const uploadProfilePic = async (
 };
 
 /**
- * Get user's files
+ * Get current user's files. Query: category (optional) to filter by category.
+ * @throws {AppError} 401 - Not authenticated
  */
 const getMyFiles = async (
     req: Request,
@@ -109,7 +114,9 @@ const getMyFiles = async (
 };
 
 /**
- * Get file by ID
+ * Get a file by ID. Returns file metadata and populated uploadedBy.
+ * @throws {AppError} 400 - Invalid file ID
+ * @throws {AppError} 404 - File not found
  */
 const getFile = async (
     req: Request,
@@ -130,7 +137,9 @@ const getFile = async (
 };
 
 /**
- * Delete file
+ * Delete a file by ID. Only the owner can delete. Removes from cloud or local disk and DB.
+ * @throws {AppError} 401 - Not authenticated
+ * @throws {AppError} 404 - File not found
  */
 const removeFile = async (
     req: Request,
