@@ -9,10 +9,11 @@ import type {
 
 
 /**
- * Process and optimize image
+ * Process and optimize an image: optional resize, format (jpeg/png/webp), quality, fit.
  * @param buffer - Image buffer from memory storage
- * @param options - Processing options
+ * @param options - width, height, quality, format, fit
  * @returns Processed image buffer
+ * @throws {AppError} 500 - Processing failed
  */
 const processImage = async (
     buffer: Buffer,
@@ -59,7 +60,11 @@ const processImage = async (
 };
 
 /**
- * Create multiple sizes (thumbnail, medium, large)
+ * Create multiple size variants (thumbnail, medium, large) plus optimized original; all WebP on disk.
+ * @param buffer - Source image buffer
+ * @param outputDir - Directory to write variant files
+ * @param filename - Base filename (extension not used; .webp is used)
+ * @returns Object with keys thumbnail, medium, large, original (filenames)
  */
 const createImageVariants = async (
     buffer: Buffer,
@@ -111,7 +116,10 @@ const createImageVariants = async (
 };
 
 /**
- * Get image metadata
+ * Extract image metadata (width, height, format, size) from a buffer.
+ * @param buffer - Image buffer
+ * @returns ImageMetadata with width, height, format, size
+ * @throws {AppError} 500 - Failed to read metadata
  */
 const getImageMetadata = async (
     buffer: Buffer
@@ -131,7 +139,9 @@ const getImageMetadata = async (
 };
 
 /**
- * Optimize profile picture
+ * Optimize buffer as profile picture: 400x400, cover fit, WebP, quality 85.
+ * @param buffer - Image buffer
+ * @returns Optimized image buffer
  */
 const optimizeProfilePicture = async (
     buffer: Buffer

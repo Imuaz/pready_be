@@ -32,7 +32,7 @@ const router = express.Router();
 // Specific routes must come BEFORE parameterized routes
 
 // @route GET/api/users/profile/me
-// @decs Get own profile
+// @desc  Get own profile
 // @access Private
 router.get(
   '/profile/me',
@@ -41,7 +41,7 @@ router.get(
 );
 
 // @route PUT /api/users/profile/me
-// @decs Update own profile
+// @desc  Update own profile
 // @access Private
 router.put(
   '/profile/me',
@@ -65,7 +65,7 @@ router.get(
 router.get('/health', (_req: Request, res: Response): void => {
     res.json({
         success:true,
-        message: 'Users service is runnign'
+        message: 'Users service is running'
     });
 });
 
@@ -127,7 +127,7 @@ router.get(
 
 // @route PUT /api/users/:id
 // @desc Update user profile
-// @access Privatae + Admin
+// @access Private + Admin
 router.put(
   '/:id',
   protect,
