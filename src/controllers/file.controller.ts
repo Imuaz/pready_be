@@ -52,6 +52,50 @@ const upload = async (
 };
 
 /**
+ * Upload multiple files. Body: category, useCloud (all optional). Multer field: file.
+ * @throws {AppError} 401 - Not authenticated
+ * @throws {AppError} 400 - No files uploaded
+ */
+const uploadMulipleFiles = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+): Promise<void> => {
+    try {
+        const userId = req.user?.id;
+        const { category, useCloud } = req.body;
+
+        if (!userId) {
+            throw new AppError('Not authenticated', 401);
+        }
+
+        if (!req.files || !Array.isArray(req.files) || req.files.length === 0){
+            throw new AppError('No files uploaded', 400);
+        }
+
+        const uploadPromises = req.files.map(file =>
+            uploadFile({
+                file,
+                userId,
+                category: category || 'other',
+                useCloud: useCloud !== 'false'
+            })
+        );
+
+        const uploadFiles = await Promise.all(uploadPromises);
+
+        res.status(201).json({
+            success: true,
+            message: `${uploadFiles.length} files uploaded successfully`,
+            data: { files: uploadFiles }
+        });
+
+    } catch (error) {
+        next(error);
+    }
+}
+
+/**
  * Upload and set profile picture. Optimizes image and stores in cloud. Multer field: file.
  * @throws {AppError} 401 - Not authenticated
  * @throws {AppError} 400 - No file uploaded
@@ -167,6 +211,7 @@ const removeFile = async (
 
 export {
     upload,
+    uploadMulipleFiles,
     uploadProfilePic,
     getMyFiles,
     getFile,
