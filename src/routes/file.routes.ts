@@ -2,12 +2,14 @@ import express from "express";
 import { protect } from "@/middleware/auth.js";
 import {
     imageUpload,
+    multipleFilesUpload,
     profileUpload,
     documentUpload,
     genericUpload
 } from "@/config/upload.js";
 import {
     upload,
+    uploadMulipleFiles,
     uploadProfilePic,
     getMyFiles,
     getFile,
@@ -41,6 +43,14 @@ router.post('/upload/profile', profileUpload.single('file'), uploadProfilePic);
 // @desc    Upload any allowed type (field: file; body: category, isPublic, useCloud)
 // @access  Private
 router.post('/upload', genericUpload.single('file'), upload);
+
+// @route POST /api/files/upload/multiple
+// @desc Upload multiple files
+// @access Private
+router.post('/upload/multiple',
+    multipleFilesUpload.array('files', 10),
+    uploadMulipleFiles
+)
 
 // @route   GET /api/files
 // @desc    Get current user's files (optional ?category=)

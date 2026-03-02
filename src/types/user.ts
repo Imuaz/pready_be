@@ -23,7 +23,7 @@ export interface IUser extends Document {
   banReason?: string;
   bannedBy?: mongoose.Types.ObjectId;
   bannedAt?: Date;
-  profileImage?: string;
+  profileImage?: mongoose.Types.ObjectId;
   bio?: string;
   phone?: string;
   address?: {

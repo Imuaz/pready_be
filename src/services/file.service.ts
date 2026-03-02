@@ -32,10 +32,14 @@ const uploadFile = async (data: UploadFileData): Promise<IFile> => {
     let fileUrl: string;
     let cloudinaryId: string | undefined;
     let filePath: string;
+    let fileBuffer: Buffer | undefined;
 
     if (useCloud) {
+        // Ensure we have a buffer: fall back to reading from disk if Multer used disk storage
+        fileBuffer = file.buffer ?? fs.readFileSync(file.path);
+
         // Upload to Cloudinary
-        const result = await uploadToCloudinary(file.buffer, {
+        const result = await uploadToCloudinary(fileBuffer, {
             folder: `uploads/${category}`,
             tags: [userId, category]
         });
@@ -51,8 +55,9 @@ const uploadFile = async (data: UploadFileData): Promise<IFile> => {
 
     // Get metadata for images
     let metadata: any = {};
-    if (file.mimetype.startsWith('image/') && file.buffer) {
-        const imageMetadata = await getImageMetadata(file.buffer);
+    if (file.mimetype.startsWith('image/')) {
+        const imageBuffer = fileBuffer ?? file.buffer ?? fs.readFileSync(file.path);
+        const imageMetadata = await getImageMetadata(imageBuffer);
         metadata = imageMetadata;
     }
 
