@@ -101,7 +101,10 @@ const UserSchema: Schema<IUser> = new Schema(
       ref: 'User'
     },
     bannedAt: Date,
-    profileImage: String,
+    profileImage: {
+      type: Schema.Types.ObjectId,
+      ref: 'File'
+    },
     bio: {
       type: String,
       maxlength: [500, 'Bio cannot be more than 500 characters']

@@ -1,5 +1,6 @@
 import "dotenv/config";
 import path from "node:path";
+import cors from "cors";
 import { fileURLToPath } from "url";
 import express, { Express, Request, Response, NextFunction } from "express";
 import { cleanupOldActivities } from "./services/activity.service.js";
@@ -52,9 +53,16 @@ app.set("trust proxy", trustProxy);
 
 connectDB();
 
-// Middlewares
+// Body parsers
 app.use(express.json());
 app.use(express.urlencoded( { extended: true }));
+
+// CORS
+app.use(cors({
+  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+  credentials: true
+}));
+
 
 // Serve static files (uploaded files)
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));

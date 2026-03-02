@@ -1,5 +1,6 @@
 import express, { Request, Response } from 'express';
 import User from '@/models/user.model.js';
+import { pingCloudinary } from '@/services/cloudinary.service.js';
 
 const router = express.Router();
 
@@ -69,6 +70,29 @@ router.get('/users', async (_req: Request, res: Response): Promise<void> => {
     res.status(500).json({
       success: false,
       error: error instanceof Error ? error.message : 'Server error'
+    });
+  }
+});
+
+// @route   GET /api/test/cloudinary
+// @desc    Test Cloudinary connectivity
+// @access  Public (dev/testing)
+router.get('/cloudinary', async (_req: Request, res: Response): Promise<void> => {
+  try {
+    const result = await pingCloudinary();
+
+    res.status(200).json({
+      success: true,
+      message: 'Cloudinary connection OK',
+      data: result
+    });
+  } catch (error) {
+    console.error('Error pinging Cloudinary:', error);
+
+    res.status(500).json({
+      success: false,
+      message: 'Cloudinary connection failed',
+      error: error instanceof Error ? error.message : 'Unknown error'
     });
   }
 });
