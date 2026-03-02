@@ -7,6 +7,7 @@ import type {
     UpdateUserData,
     UserStats
 } from "@/types/user.js";
+import { uploadUserProfilePicture } from "./file.service.js";
 import AppError from "@/utils/AppError.js";
 
 
@@ -125,8 +126,15 @@ const updateUser = async (
         updateData.email = updateData.email?.toLowerCase();
     }
 
-    // Update user
-    Object.assign(user, updateData);
+    // Handle profileImage separately to ensure it is stored as ObjectId
+    const { profileImage, ...rest } = updateData;
+
+    if (profileImage) {
+      user.profileImage = new mongoose.Types.ObjectId(profileImage);
+    }
+
+    // Update remaining user fields
+    Object.assign(user, rest);
     await user.save();
 
     // LOG PROFILE UPDATE
@@ -368,6 +376,37 @@ const getUserStats = async (): Promise<UserStats> => {
   };
 };
 
+/**
+ * Update user profile picture
+ */
+const updateUserProfilePicture = async (
+  userId: string,
+  file: Express.Multer.File
+) => {
+  if (!mongoose.Types.ObjectId.isValid(userId)) {
+    throw new AppError('Invalid user ID', 400);
+  }
+
+  const user = await User.findById(userId);
+
+  if (!user) {
+    throw new AppError('User not found', 404);
+  }
+
+  // Upload new profile picture
+  const uploadedFile = await uploadUserProfilePicture(file, userId);
+
+  // Update user
+  user.profileImage = uploadedFile._id as any;
+  await user.save();
+
+  return {
+    user,
+    file: uploadedFile
+  };
+};
+
+
 
 export {
   getAllUsers,
@@ -377,5 +416,6 @@ export {
   banUser,
   unbanUser,
   changeUserRole,
-  getUserStats
+  getUserStats,
+  updateUserProfilePicture
 };

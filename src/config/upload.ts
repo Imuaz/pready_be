@@ -185,6 +185,21 @@ const genericUpload = multer({
     }
 });
 
+/**
+ * Multiple files upload
+ */
+const multipleFilesUpload = multer({
+    storage: memoryStorage,
+    fileFilter: fileFilter([
+        ...allowedMimeTypes.images,
+        ...allowedMimeTypes.documents
+    ]),
+    limits: {
+        fileSize: 10 * 1024 * 1024,
+        files: 10 // Maximum 10 files
+    }
+});
+
 export {
     imageUpload,
     documentUpload,
@@ -193,5 +208,6 @@ export {
     genericUpload,
     allowedMimeTypes,
     uploadDir,
+    multipleFilesUpload,
     FILE_SIZE_LIMITS
 };

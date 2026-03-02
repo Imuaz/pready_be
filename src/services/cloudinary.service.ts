@@ -111,8 +111,24 @@ const uploadProfilePicture = async (
     };
 };
 
+/**
+ * Simple Cloudinary health check using the admin API ping endpoint.
+ * @returns The raw ping response from Cloudinary
+ * @throws {AppError} 500 - If Cloudinary is not reachable or credentials are invalid
+ */
+const pingCloudinary = async (): Promise<unknown> => {
+    try {
+        const result = await cloudinary.api.ping();
+        return result;
+    } catch (error) {
+        console.error('Cloudinary ping error:', error);
+        throw new AppError('Cloudinary connection failed', 500);
+    }
+};
+
 export {
     uploadToCloudinary,
     deleteFromCloudinary,
-    uploadProfilePicture
+    uploadProfilePicture,
+    pingCloudinary
 };
