@@ -1,7 +1,6 @@
 import mongoose,{ Schema, Model } from "mongoose";
 import type { INotification } from "@/types/notification.js";
 
-
 const NotificationSchema: Schema<INotification> = new Schema(
     {
         recipient: {
