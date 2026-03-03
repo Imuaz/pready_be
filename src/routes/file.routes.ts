@@ -9,7 +9,7 @@ import {
 } from "@/config/upload.js";
 import {
     upload,
-    uploadMulipleFiles,
+    uploadMultipleFiles,
     uploadProfilePic,
     getMyFiles,
     getFile,
@@ -49,7 +49,7 @@ router.post('/upload', genericUpload.single('file'), upload);
 // @access Private
 router.post('/upload/multiple',
     multipleFilesUpload.array('files', 10),
-    uploadMulipleFiles
+    uploadMultipleFiles
 )
 
 // @route   GET /api/files

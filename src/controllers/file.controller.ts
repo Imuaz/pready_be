@@ -52,11 +52,11 @@ const upload = async (
 };
 
 /**
- * Upload multiple files. Body: category, useCloud (all optional). Multer field: file.
+ * Upload multiple files. Body: category, useCloud (all optional). Multer field: files.
  * @throws {AppError} 401 - Not authenticated
  * @throws {AppError} 400 - No files uploaded
  */
-const uploadMulipleFiles = async (
+const uploadMultipleFiles = async (
     req: Request,
     res: Response,
     next: NextFunction
@@ -73,7 +73,9 @@ const uploadMulipleFiles = async (
             throw new AppError('No files uploaded', 400);
         }
 
-        const uploadPromises = req.files.map(file =>
+        const files = req.files as Express.Multer.File[];
+
+        const uploadPromises = files.map(file =>
             uploadFile({
                 file,
                 userId,
@@ -211,7 +213,7 @@ const removeFile = async (
 
 export {
     upload,
-    uploadMulipleFiles,
+    uploadMultipleFiles,
     uploadProfilePic,
     getMyFiles,
     getFile,
