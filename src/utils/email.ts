@@ -1,10 +1,12 @@
 import createTransporter from "@/config/email.js";
 import AppError from "./AppError.js";
 import type { EmailOptions } from "@/types/common.js";
+import type { INotification } from "@/types/notification.js";
 import {
     verificationMailTemplate,
     passwordResetMailTemplate,
-    passwordChangedMailTemplate
+    passwordChangedMailTemplate,
+    notificationEmailTemplate
 } from "@/templates/emails.js";
 
 
@@ -96,9 +98,37 @@ const sendPasswordChangedEmail = async (
   });
 };
 
+/**
+ * Send email notification
+ */
+const sendEmailNotification = async (
+  notification: INotification
+): Promise<void> => {
+  try {
+    const user = notification.recipient as any;
+
+    const html = notificationEmailTemplate(
+      notification.title,
+      notification.message,
+      notification.actionUrl
+    );
+
+    await sendEmail({
+      to: user.email,
+      subject: notification.title,
+      html
+    });
+
+    console.log(`📧 Email notification sent to ${user.email}`);
+  } catch (error) {
+    console.error('Failed to send email notification:', error);
+  }
+};
+
 export {
   sendEmail,
   sendVerificationEmail,
   sendPasswordResetEmail,
-  sendPasswordChangedEmail
+  sendPasswordChangedEmail,
+  sendEmailNotification
 };
