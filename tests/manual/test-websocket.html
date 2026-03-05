@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>WebSocket Test - Fixed</title>
+  <!-- Socket.io client served directly by the backend (always version-matched) -->
+  <script src="http://localhost:5000/socket.io/socket.io.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 800px;
+      margin: 50px auto;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+
+    .container {
+      background: white;
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    .notification {
+      background: #f0f0f0;
+      padding: 15px;
+      margin: 10px 0;
+      border-radius: 5px;
+      border-left: 4px solid #4F46E5;
+    }
+
+    .success {
+      border-left-color: #10B981;
+      background: #D1FAE5;
+    }
+
+    .error {
+      border-left-color: #EF4444;
+      background: #FEE2E2;
+    }
+
+    .warning {
+      border-left-color: #F59E0B;
+      background: #FEF3C7;
+    }
+
+    button {
+      background: #4F46E5;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 5px;
+      cursor: pointer;
+      margin: 5px;
+      font-size: 14px;
+    }
+
+    button:hover {
+      background: #4338CA;
+    }
+
+    button:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+
+    #status {
+      padding: 15px;
+      margin: 20px 0;
+      border-radius: 5px;
+      font-weight: bold;
+    }
+
+    .connected {
+      background: #D1FAE5;
+      color: #065F46;
+      border: 2px solid #10B981;
+    }
+
+    .disconnected {
+      background: #FEE2E2;
+      color: #991B1B;
+      border: 2px solid #EF4444;
+    }
+
+    input {
+      width: 100%;
+      padding: 10px;
+      margin: 10px 0;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      font-size: 14px;
+    }
+
+    .debug {
+      background: #f9f9f9;
+      padding: 10px;
+      border-radius: 5px;
+      font-family: monospace;
+      font-size: 12px;
+      margin: 10px 0;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+
+    .debug-item {
+      padding: 5px;
+      border-bottom: 1px solid #eee;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <h1>🔔 WebSocket Test (Fixed)</h1>
+
+    <div id="status" class="disconnected">
+      Status: Disconnected ❌
+    </div>
+
+    <div>
+      <label><strong>Server URL:</strong></label>
+      <input type="text" id="serverUrl" value="http://localhost:5000" placeholder="http://localhost:5000">
+    </div>
+
+    <div>
+      <label><strong>Access Token:</strong></label>
+      <input type="text" id="token" placeholder="Paste your JWT token here">
+    </div>
+
+    <div>
+      <button onclick="connect()" id="connectBtn">🔌 Connect</button>
+      <button onclick="disconnect()" id="disconnectBtn" disabled>❌ Disconnect</button>
+      <button onclick="sendTestNotification()" id="testBtn" disabled>📨 Send Test</button>
+      <button onclick="clearNotifications()">🗑️ Clear</button>
+    </div>
+
+    <h3>Debug Log:</h3>
+    <div id="debug" class="debug"></div>
+
+    <h3>Notifications:</h3>
+    <div id="notifications"></div>
+  </div>
+
+  <script>
+    let socket = null;
+
+    function log(message, type = 'info') {
+      const debugDiv = document.getElementById('debug');
+      const time = new Date().toLocaleTimeString();
+      const item = document.createElement('div');
+      item.className = 'debug-item';
+      item.textContent = `[${time}] ${message}`;
+      debugDiv.insertBefore(item, debugDiv.firstChild);
+      console.log(`[${type}]`, message);
+    }
+
+    function connect() {
+      const serverUrl = document.getElementById('serverUrl').value;
+      const token = document.getElementById('token').value;
+
+      if (!token) {
+        alert('⚠️ Please enter your access token');
+        return;
+      }
+
+      log('Attempting to connect to: ' + serverUrl);
+
+      // Connect to WebSocket server
+      socket = io(serverUrl, {
+        auth: { token: token },
+        transports: ['polling', 'websocket'],
+        reconnection: true,
+        reconnectionDelay: 1000,
+        reconnectionAttempts: 5
+      });
+
+      // Connection success
+      socket.on('connect', () => {
+        log('✅ Connected successfully! Socket ID: ' + socket.id, 'success');
+        document.getElementById('status').textContent = 'Status: Connected ✅';
+        document.getElementById('status').className = 'connected';
+        document.getElementById('connectBtn').disabled = true;
+        document.getElementById('disconnectBtn').disabled = false;
+        document.getElementById('testBtn').disabled = false;
+      });
+
+      // Connected event from server
+      socket.on('connected', (data) => {
+        log('Server confirmed connection: ' + JSON.stringify(data));
+      });
+
+      // New notification received
+      socket.on('new-notification', (data) => {
+        log('📬 New notification received');
+        displayNotification(data.notification);
+      });
+
+      // Notification marked as read
+      socket.on('notification-read', (data) => {
+        log('📖 Notification read: ' + data.notificationId);
+      });
+
+      // All notifications marked as read
+      socket.on('all-notifications-read', () => {
+        log('📖 All notifications marked as read');
+      });
+
+      // Disconnection
+      socket.on('disconnect', (reason) => {
+        log('❌ Disconnected. Reason: ' + reason, 'error');
+        document.getElementById('status').textContent = 'Status: Disconnected ❌';
+        document.getElementById('status').className = 'disconnected';
+        document.getElementById('connectBtn').disabled = false;
+        document.getElementById('disconnectBtn').disabled = true;
+        document.getElementById('testBtn').disabled = true;
+      });
+
+      // Connection error
+      socket.on('connect_error', (error) => {
+        log('❌ Connection error: ' + error.message, 'error');
+
+        let errorMsg = '';
+        if (error.message.includes('Authentication')) {
+          errorMsg = 'Invalid token. Please login again.';
+        } else if (error.message.includes('xhr poll error')) {
+          errorMsg = 'Cannot reach server. Check if server is running on ' + serverUrl;
+        } else {
+          errorMsg = error.message;
+        }
+
+        document.getElementById('status').textContent = 'Status: Error - ' + errorMsg;
+        document.getElementById('status').className = 'disconnected';
+        alert('❌ ' + errorMsg);
+      });
+
+      // Reconnection attempts
+      socket.on('reconnect_attempt', (attempt) => {
+        log(`Reconnection attempt ${attempt}...`);
+      });
+
+      socket.on('reconnect_failed', () => {
+        log('❌ Reconnection failed', 'error');
+      });
+    }
+
+    function disconnect() {
+      if (socket) {
+        log('Disconnecting...');
+        socket.disconnect();
+        socket = null;
+      }
+    }
+
+    function displayNotification(notification) {
+      const container = document.getElementById('notifications');
+      const div = document.createElement('div');
+      div.className = `notification ${notification.type}`;
+      div.innerHTML = `
+        <strong>${notification.title}</strong>
+        <p>${notification.message}</p>
+        <small>
+          Priority: ${notification.priority} | 
+          Type: ${notification.type} | 
+          ${new Date(notification.createdAt).toLocaleString()}
+        </small>
+      `;
+      container.insertBefore(div, container.firstChild);
+    }
+
+    function clearNotifications() {
+      document.getElementById('notifications').innerHTML = '';
+      log('Cleared notifications display');
+    }
+
+    function sendTestNotification() {
+      const serverUrl = document.getElementById('serverUrl').value;
+      const token = document.getElementById('token').value;
+
+      log('Sending test notification...');
+
+      fetch(serverUrl + '/api/notifications/test', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      })
+        .then(res => res.json())
+        .then(data => {
+          log('✅ Test notification sent successfully');
+          console.log('Response:', data);
+        })
+        .catch(err => {
+          log('❌ Failed to send test notification: ' + err.message, 'error');
+          alert('Failed to send test notification. Check console for details.');
+        });
+    }
+
+    // Auto-load token from localStorage if available
+    window.addEventListener('load', () => {
+      const savedToken = localStorage.getItem('test_token');
+      if (savedToken) {
+        document.getElementById('token').value = savedToken;
+        log('Loaded saved token from localStorage');
+      }
+    });
+
+    // Save token to localStorage when changed
+    document.getElementById('token').addEventListener('change', (e) => {
+      localStorage.setItem('test_token', e.target.value);
+      log('Token saved to localStorage');
+    });
+  </script>
+</body>
+
+</html>
