@@ -9,6 +9,10 @@ import type {
 } from "@/types/user.js";
 import { uploadUserProfilePicture } from "./file.service.js";
 import AppError from "@/utils/AppError.js";
+import {
+  sendProfileUpdatedNotification,
+  sendAccountBannedNotification
+} from "@/utils/notificationHelper.js";
 
 
 /**
@@ -145,6 +149,13 @@ const updateUser = async (
       details: `Profile updated for user: ${user.email}`
     });
 
+    // Send notification
+    try {
+      await sendProfileUpdatedNotification(userId);
+    } catch (error) {
+      console.error('Failed to send notification:', error);
+    }
+
     return user;
 }
 
@@ -241,6 +252,13 @@ const banUser = async (
       targetUserId: userId,
       details: `Banned user: ${user.email}. Reason: ${reason}`
     });
+
+    // Send notification
+    try {
+      await sendAccountBannedNotification(userId, reason);
+    } catch (error) {
+      console.error('Failed to send notification:', error);
+    }
 
     return user;
 }
