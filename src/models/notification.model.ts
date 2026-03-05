@@ -1,5 +1,10 @@
-import mongoose,{ Schema, Model } from "mongoose";
+/**
+ * @module notification.model
+ * @description Mongoose model for user notifications.
+ */
+import mongoose, { Schema, Model } from "mongoose";
 import type { INotification } from "@/types/notification.js";
+import type { NotificationType, NotificationPriority } from "@/types/notification.js";
 
 const NotificationSchema: Schema<INotification> = new Schema(
     {
@@ -11,12 +16,12 @@ const NotificationSchema: Schema<INotification> = new Schema(
         },
         sender: {
             type: Schema.Types.ObjectId,
-            ref: 'User'  
+            ref: 'User'
         },
         type: {
             type: String,
-            enum: ['info', 'success', 'warnig', 'error', 'mention', 'system'],
-            default: 'info'
+            enum: ['info', 'success', 'warning', 'error', 'mention', 'system'] satisfies NotificationType[],
+            default: 'info' as NotificationType
         },
         title: {
             type: String,
@@ -25,7 +30,7 @@ const NotificationSchema: Schema<INotification> = new Schema(
             maxlength: [100, 'Title cannot exceed 100 characters']
 
         },
-        message:{
+        message: {
             type: String,
             required: [true, 'Notification message is required'],
             trim: true,
@@ -46,8 +51,8 @@ const NotificationSchema: Schema<INotification> = new Schema(
         },
         priority: {
             type: String,
-            enum: ['low', 'medium', 'high', 'urgent'],
-            default: 'medium'
+            enum: ['low', 'medium', 'high', 'urgent'] satisfies NotificationPriority[],
+            default: 'medium' as NotificationPriority
         },
         expiresAt: {
             type: Date
