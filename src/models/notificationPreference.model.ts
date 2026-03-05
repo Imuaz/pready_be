@@ -1,67 +1,83 @@
+/**
+ * @module models/notificationPreference
+ * @description Mongoose model for storing per-user notification delivery preferences.
+ * A document is created on first access (lazy upsert) via the notification service.
+ */
 import mongoose, { Schema, Model } from "mongoose";
 import type { INotificationPreference } from "@/types/notification.js";
 
 
 const NotificationPreferenceSchema: Schema<INotificationPreference> = new Schema(
     {
+        /** Reference to the owning User document. One preference document per user. */
         user: {
             type: Schema.Types.ObjectId,
-            ref: 'User',
+            ref: "User",
             required: true,
             unique: true,
-            index: true
+            index: true,
         },
+        /** Email delivery configuration. */
         email: {
             enabled: {
                 type: Boolean,
-                default: true
+                default: true,
             },
             frequency: {
                 type: String,
-                enum: ['instant', 'daily', 'weekly'],
-                default: 'instant'
+                enum: ["instant", "daily", "weekly"],
+                default: "instant",
             },
+            /** Notification types that will trigger an email. */
             types: {
                 type: [String],
-                default: ['mention', 'system', 'warning', 'error']
-            }
+                default: ["mention", "system", "warning", "error"],
+            },
         },
+        /** Push notification (FCM / APNS) configuration. */
         push: {
             enabled: {
                 type: Boolean,
-                default: true
+                default: true,
             },
+            /** Notification types that will trigger a push notification. */
             types: {
                 type: [String],
-                default: ['mention', 'urgent', 'system']
-            }
+                default: ["mention", "urgent", "system"],
+            },
         },
+        /** In-app (Socket.io) notification configuration. */
         inApp: {
             enabled: {
                 type: Boolean,
-                default: true
+                default: true,
             },
+            /** Notification types delivered in-app. */
             types: {
                 type: [String],
-                default: ['info', 'success', 'warning', 'error', 'mention', 'system']
-            }
+                default: ["info", "success", "warning", "error", "mention", "system"],
+            },
         },
+        /** Do-not-disturb window. All channels are suppressed during this period. */
         doNotDisturb: {
             enabled: {
                 type: Boolean,
-                default: false
+                default: false,
             },
-            startTime: String, // e.g., "22:00"
-            endTime: String // e.g, "08.00"
-        }
+            /** 24-hour time string, e.g. "22:00" */
+            startTime: String,
+            /** 24-hour time string, e.g. "08:00" */
+            endTime: String,
+        },
     },
     {
-        timestamps: true
+        timestamps: true,
     }
 );
 
+
 const NotificationPreference: Model<INotificationPreference> = mongoose.model<INotificationPreference>(
-    'NotificationPreference',
+    "NotificationPreference",
     NotificationPreferenceSchema
 );
 
