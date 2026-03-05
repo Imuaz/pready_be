@@ -1,11 +1,10 @@
 import mongoose from "mongoose";
 import User from "@/models/user.model.js";
-import Activity from "@/models/activity.model.js";
 import { logActivity } from "./activity.service.js";
 import type {
-    GetUsersQuery,
-    UpdateUserData,
-    UserStats
+  GetUsersQuery,
+  UpdateUserData,
+  UserStats
 } from "@/types/user.js";
 import { uploadUserProfilePicture } from "./file.service.js";
 import AppError from "@/utils/AppError.js";
@@ -21,54 +20,54 @@ import {
  * @returns Any users object with paginations
  */
 const getAllUsers = async (query: GetUsersQuery) => {
-    const {
-        page = 1,
-        limit = 10,
-        role,
-        isActive,
-        isBanned,
-        search,
-        sortBy = 'createdAt',
-        sortOrder = 'desc'
-    } = query
+  const {
+    page = 1,
+    limit = 10,
+    role,
+    isActive,
+    isBanned,
+    search,
+    sortBy = 'createdAt',
+    sortOrder = 'desc'
+  } = query
 
-    // Build filter object
-    const filter: any = {};
+  // Build filter object
+  const filter: any = {};
 
-    if (role) filter.role = role;
-    if (isActive !== undefined) filter.isActive = isActive;
-    if (isBanned !== undefined) filter.isBanned = isBanned;
+  if (role) filter.role = role;
+  if (isActive !== undefined) filter.isActive = isActive;
+  if (isBanned !== undefined) filter.isBanned = isBanned;
 
-    // Search by name or email
-    if (search) {
-        filter.$or = [
-            { name: { $regex: search, $options: 'i' } },
-            { email: { $regex: search, $options: 'i' } }
-        ];
+  // Search by name or email
+  if (search) {
+    filter.$or = [
+      { name: { $regex: search, $options: 'i' } },
+      { email: { $regex: search, $options: 'i' } }
+    ];
+  }
+
+  // Calculate skip
+  const skip = (page - 1) * limit;
+
+  // Build sort object
+  const sort: any = {};
+  sort[sortBy] = sortOrder === 'asc' ? 1 : -1;
+
+  // Excute query
+  const users = await User.find(filter).select('-password -refreshTokens -verificationToken -resetPasswordToken').sort(sort).skip(skip).limit(limit).lean();
+
+  // Get total count
+  const total = await User.countDocuments(filter);
+
+  return {
+    users,
+    pagination: {
+      total,
+      page,
+      limit,
+      pages: Math.ceil(total / limit)
     }
-
-    // Calculate skip
-    const skip = (page -1) * limit;
-
-    // Build sort object
-    const sort: any = {};
-    sort[sortBy] = sortOrder === 'asc' ? 1 : -1;
-
-    // Excute query
-    const users = await User.find(filter).select('-password -refreshTokens -verificationToken -resetPasswordToken').sort(sort).skip(skip).limit(limit).lean();
-
-    // Get total count
-    const total = await User.countDocuments(filter);
-
-    return {
-        users,
-        pagination: {
-            total,
-            page,
-            limit,
-            pages: Math.ceil(total / limit)
-        }
-    };
+  };
 };
 
 /**
@@ -77,17 +76,17 @@ const getAllUsers = async (query: GetUsersQuery) => {
  * @returns Any user
  */
 const getUserById = async (userId: string) => {
-    if (!mongoose.Types.ObjectId.isValid(userId)) {
-        throw new AppError('Invalid user ID format', 400);
-    }
+  if (!mongoose.Types.ObjectId.isValid(userId)) {
+    throw new AppError('Invalid user ID format', 400);
+  }
 
-    const user = await User.findById(userId).select('-password -refreshTokens -verificationToken -resetPasswordToken').populate('bannedBy', 'name email').lean();
+  const user = await User.findById(userId).select('-password -refreshTokens -verificationToken -resetPasswordToken').populate('bannedBy', 'name email').lean();
 
-    if (!user) {
-        throw new AppError('User not found', 404);
-    }
+  if (!user) {
+    throw new AppError('User not found', 404);
+  }
 
-    return user;
+  return user;
 };
 
 /**
@@ -98,65 +97,65 @@ const getUserById = async (userId: string) => {
  * @returns Any updated user
  */
 const updateUser = async (
-    userId: string,
-    requestingUserId: string,
-    updateData: UpdateUserData
+  userId: string,
+  requestingUserId: string,
+  updateData: UpdateUserData
 ) => {
-    if (!mongoose.Types.ObjectId.isValid(userId)) {
-        throw new AppError('Invalid user ID format', 400);
-    }
+  if (!mongoose.Types.ObjectId.isValid(userId)) {
+    throw new AppError('Invalid user ID format', 400);
+  }
 
-    // Prevent self-update
-    if (userId === requestingUserId) {
-        throw new AppError('You cannot update your own account', 403);
-    }
+  // Prevent self-update
+  if (userId === requestingUserId) {
+    throw new AppError('You cannot update your own account', 403);
+  }
 
-    const user = await User.findById(userId);
+  const user = await User.findById(userId);
 
-    if (!user) {
-        throw new AppError('User not found', 404);
-    }
+  if (!user) {
+    throw new AppError('User not found', 404);
+  }
 
-    // If changing email, check it's not taken
-    if (updateData.email && updateData.email !== user.email) {
-        const emailExists = await User.findOne({
-            email: updateData.email.toLowerCase()
-        });
-
-        if (emailExists) {
-            throw new AppError('Email already in use', 409);
-        }
-
-        updateData.email = updateData.email?.toLowerCase();
-    }
-
-    // Handle profileImage separately to ensure it is stored as ObjectId
-    const { profileImage, ...rest } = updateData;
-
-    if (profileImage) {
-      user.profileImage = new mongoose.Types.ObjectId(profileImage);
-    }
-
-    // Update remaining user fields
-    Object.assign(user, rest);
-    await user.save();
-
-    // LOG PROFILE UPDATE
-    await logActivity({
-      userId: requestingUserId,
-      targetUserId: userId,
-      action: 'profile_updated',
-      details: `Profile updated for user: ${user.email}`
+  // If changing email, check it's not taken
+  if (updateData.email && updateData.email !== user.email) {
+    const emailExists = await User.findOne({
+      email: updateData.email.toLowerCase()
     });
 
-    // Send notification
-    try {
-      await sendProfileUpdatedNotification(userId);
-    } catch (error) {
-      console.error('Failed to send notification:', error);
+    if (emailExists) {
+      throw new AppError('Email already in use', 409);
     }
 
-    return user;
+    updateData.email = updateData.email?.toLowerCase();
+  }
+
+  // Handle profileImage separately to ensure it is stored as ObjectId
+  const { profileImage, ...rest } = updateData;
+
+  if (profileImage) {
+    user.profileImage = new mongoose.Types.ObjectId(profileImage);
+  }
+
+  // Update remaining user fields
+  Object.assign(user, rest);
+  await user.save();
+
+  // LOG PROFILE UPDATE
+  await logActivity({
+    userId: requestingUserId,
+    targetUserId: userId,
+    action: 'profile_updated',
+    details: `Profile updated for user: ${user.email}`
+  });
+
+  // Send notification
+  try {
+    await sendProfileUpdatedNotification(userId);
+  } catch (error) {
+    console.error('Failed to send notification:', error);
+  }
+
+  return user;
 }
 
 /**
@@ -165,32 +164,32 @@ const updateUser = async (
  * @param requestingUserId - user performing the delete action
  */
 const deleteUser = async (userId: string, requestingUserId: string) => {
-    if (!mongoose.Types.ObjectId.isValid(userId)) {
-        throw new AppError('Invalid use ID format', 400);
-    }
+  if (!mongoose.Types.ObjectId.isValid(userId)) {
+    throw new AppError('Invalid use ID format', 400);
+  }
 
-    // Prevent self-deletion
-    if (userId === requestingUserId) {
-        throw new AppError('You cannot delete your own account', 403);
-    }
+  // Prevent self-deletion
+  if (userId === requestingUserId) {
+    throw new AppError('You cannot delete your own account', 403);
+  }
 
-    const user = await User.findById(userId);
+  const user = await User.findById(userId);
 
-    if (!user) {
-        throw new AppError('User not found', 404);
-    }
+  if (!user) {
+    throw new AppError('User not found', 404);
+  }
 
-    await User.findByIdAndDelete(userId);
+  await User.findByIdAndDelete(userId);
 
-    // LOG USER DELETION
-    await logActivity ({
-      userId: requestingUserId,
-      action: 'user_deleted',
-      targetUserId: userId,
-      details: `Deleted user: ${user.email}`
-    });
+  // LOG USER DELETION
+  await logActivity({
+    userId: requestingUserId,
+    action: 'user_deleted',
+    targetUserId: userId,
+    details: `Deleted user: ${user.email}`
+  });
 
-    return { message: 'User deleted successfully'};
+  return { message: 'User deleted successfully' };
 }
 
 /**
@@ -200,67 +199,60 @@ const deleteUser = async (userId: string, requestingUserId: string) => {
  * @param bannedByUserId - user performing the ban action
  */
 const banUser = async (
-    userId: string,
-    reason: string,
-    bannedByUserId: string
+  userId: string,
+  reason: string,
+  bannedByUserId: string
 ) => {
-    if (!mongoose.Types.ObjectId.isValid(userId)) {
-        throw new AppError('Invalid user ID format', 400);
-    }
+  if (!mongoose.Types.ObjectId.isValid(userId)) {
+    throw new AppError('Invalid user ID format', 400);
+  }
 
-    // Prevent self-ban
-    if (userId === bannedByUserId) {
-        throw new AppError('You cannot ban yourself', 403);
-    }
+  // Prevent self-ban
+  if (userId === bannedByUserId) {
+    throw new AppError('You cannot ban yourself', 403);
+  }
 
-    const user = await User.findById(userId);
+  const user = await User.findById(userId);
 
-    if (!user) {
-        throw new AppError('User not found', 404);
-    }
+  if (!user) {
+    throw new AppError('User not found', 404);
+  }
 
-    if (user.isBanned) {
-        throw new AppError('User is already banned', 400);
-    }
+  if (user.isBanned) {
+    throw new AppError('User is already banned', 400);
+  }
 
-    // Prevent banning admins (unless super admin is implemented)
-    if (user.role === 'admin') {
-        throw new AppError('Cannont ban admin users', 403)
-    }
+  // Prevent banning admins (unless super admin is implemented)
+  if (user.role === 'admin') {
+    throw new AppError('Cannont ban admin users', 403)
+  }
 
-    user.isBanned = true;
-    user.banReason = reason;
-    user.bannedBy = new mongoose.Types.ObjectId(bannedByUserId);
-    user.bannedAt = new Date();
+  user.isBanned = true;
+  user.banReason = reason;
+  user.bannedBy = new mongoose.Types.ObjectId(bannedByUserId);
+  user.bannedAt = new Date();
 
-    await Activity.create({
-      user: bannedByUserId,
-      action: 'user_banned',
-      targetUser: userId,
-      details: reason
-    });
-
-    // Clear all refresh tokens (force logout)
-    user.refreshTokens = [];
-    await user.save();
+  // Clear all refresh tokens (force logout)
+  user.refreshTokens = [];
+  await user.save();
 
 
-    // LOG USER BAN
-    await logActivity({
-      userId: bannedByUserId,
-      action: 'user_banned',
-      targetUserId: userId,
-      details: `Banned user: ${user.email}. Reason: ${reason}`
-    });
+  // LOG USER BAN
+  await logActivity({
+    userId: bannedByUserId,
+    action: 'user_banned',
+    targetUserId: userId,
+    details: `Banned user: ${user.email}. Reason: ${reason}`
+  });
 
-    // Send notification
-    try {
-      await sendAccountBannedNotification(userId, reason);
-    } catch (error) {
-      console.error('Failed to send notification:', error);
-    }
+  // Send notification
+  try {
+    await sendAccountBannedNotification(userId, reason);
+  } catch (error) {
+    console.error('Failed to send notification:', error);
+  }
 
-    return user;
+  return user;
 }
 
 /**
