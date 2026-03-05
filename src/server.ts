@@ -70,8 +70,18 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // CORS
+// Allowed origins are read from CORS_ORIGINS (comma-separated) in .env.
+// Falls back to FRONTEND_URL, then http://localhost:3000 for local dev.
+const rawOrigins = process.env.CORS_ORIGINS || process.env.FRONTEND_URL || 'http://localhost:3000';
+const allowedOrigins = new Set(rawOrigins.split(',').map(o => o.trim()).filter(Boolean));
+
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+  origin: (origin, callback) => {
+    // Allow requests with no origin (e.g. curl, Postman, server-to-server)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.has(origin)) return callback(null, true);
+    callback(new Error(`CORS: origin '${origin}' is not allowed`));
+  },
   credentials: true
 }));
 
