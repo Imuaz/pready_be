@@ -2,6 +2,7 @@ import "dotenv/config";
 import path from "node:path";
 import cors from "cors";
 import { fileURLToPath } from "url";
+import { createServer } from "node:http";
 import express, { Express, Request, Response, NextFunction } from "express";
 import { cleanupOldActivities } from "./services/activity.service.js";
 
@@ -11,6 +12,9 @@ const __dirname = path.dirname(__filename);
 
 // Import database connection
 import connectDB from '@/config/database.js';
+
+// Import Socket.io
+import { initializeSocket } from "./config/socket.js";
 
 // Import middleware
 import logger from "@/middleware/logger.js";
@@ -30,9 +34,17 @@ import activityRoutes from '@/routes/activity.routes.js';
 import apiKeyRoutes from "@/routes/apiKey.routes.js";
 import demoRoutes from "@/routes/demo.routes.js";
 import fileRoutes from "@/routes/file.routes.js";
+import notificationRoutes from "@/routes/notification.routes.js";
 
-
+// Create Express server
 const app: Express = express();
+
+// Create HTTP server
+const httpServer = createServer(app);
+
+// Initialize Socket.io
+const io = initializeSocket(httpServer);
+
 const PORT: number = parseInt(process.env.PORT || '5000', 10);
 const NODE_ENV: string = process.env.NODE_ENV || 'development';
 
@@ -78,10 +90,11 @@ app.use(generalLimiter);
 app.get('/', (_req: Request, res: Response): void => {
   res.json({ 
     success: true,
-    message: 'Backend Master API with TypeScript!',
+    message: 'Backend Master API with Real-time Notifications',
     version: '1.0.0',
     environment: NODE_ENV,
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
+    socketConnections: io.engine.clientsCount
   });
 });
 
@@ -91,13 +104,14 @@ app.use('/api/auth/register', authLimiter);
 app.use('/api/auth/forgot-password', passwordResetLimiter);
 app.use('/api/auth', authRoutes);
 
-
+// API routes
 app.use('/api/users', userRoutes);
 app.use('/api/test', testRoutes);
 app.use('/api/activities', activityRoutes);
 app.use('/api/api-keys', apiKeyRoutes);
 app.use('/api/demo', demoRoutes);
 app.use('/api/files', fileRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 app.get('/api/test-error', (_req: Request, _res: Response, next: NextFunction) => {
     const error = new Error('This is a test error') as Error & { statusCode: number };
@@ -122,14 +136,17 @@ app.listen(PORT, (): void => {
   console.log(`💙 TypeScript: ENABLED`);
   console.log(`🍃 MongoDB: CONNECTING...`);
   console.log(`🔐 Rate Limiting: ENABLED`);
+  console.log(`📁 File Uploads: ENABLED`);
+  console.log(`🔔 WebSocket: ENABLED`);
   console.log('=================================');
   console.log('📋 Available Routes:');
   console.log('   Auth: /api/auth/*');
   console.log('   Users: /api/users/*');
   console.log('   Activities: /api/activities/*');
   console.log('   API Keys: /api/api-keys/*');
-  console.log('   Demo: /api/demo/*');
   console.log('   Files: /api/files/*');
+  console.log('   Notifications: /api/notifications/*');
+  console.log('   Demo: /api/demo/*');
   console.log('=================================');
 
   // Run cleanup daily at midnight
