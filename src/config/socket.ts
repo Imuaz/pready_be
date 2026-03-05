@@ -33,10 +33,14 @@ let io: SocketIOServer;
  * @param httpServer - The Node.js HTTP server instance (created by `http.createServer`).
  * @returns The initialised {@link SocketIOServer} instance.
  */
+// Mirror the same origin allow-list used by HTTP CORS in server.ts
+const rawSocketOrigins = process.env.CORS_ORIGINS || process.env.FRONTEND_URL || 'http://localhost:3000';
+const allowedSocketOrigins = rawSocketOrigins.split(',').map((o) => o.trim()).filter(Boolean);
+
 const initializeSocket = (httpServer: HTTPServer): SocketIOServer => {
     io = new SocketIOServer(httpServer, {
         cors: {
-            origin: process.env.FRONTEND_URL || "http://localhost:3000",
+            origin: allowedSocketOrigins,
             credentials: true,
         },
         pingTimeout: 60000,
