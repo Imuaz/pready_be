@@ -2,6 +2,7 @@ import bcrypt from "bcryptjs";
 import User from "@/models/user.model.js";
 import AppError from "@/utils/AppError.js";
 import { logActivity } from "./activity.service.js";
+import { sendWelcomeNotification } from "@/utils/notificationHelper.js";
 import type {
   RegisterData,
   AuthResult,
@@ -91,6 +92,13 @@ const registerUser = async (data: RegisterData): Promise<AuthResult> => {
     console.error('❌ Failed to send verification email:', error);
     // Don't fail registration if email fails
     // User can request a new verification email later
+  }
+
+  // Send welcome notification
+  try {
+    await sendWelcomeNotification((user._id).toString());
+  } catch (error) {
+    console.error('Failed to send welcome notification:', error);
   }
 
   return {
