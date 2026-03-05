@@ -1,18 +1,24 @@
+/**
+ * @module utils/email
+ * @description Email sending utilities using the configured Nodemailer transporter.
+ */
 import createTransporter from "@/config/email.js";
 import AppError from "./AppError.js";
 import type { EmailOptions } from "@/types/common.js";
 import type { INotification } from "@/types/notification.js";
 import {
-    verificationMailTemplate,
-    passwordResetMailTemplate,
-    passwordChangedMailTemplate,
-    notificationEmailTemplate
+  verificationMailTemplate,
+  passwordResetMailTemplate,
+  passwordChangedMailTemplate,
+  notificationEmailTemplate,
 } from "@/templates/emails.js";
 
 
 /**
- * Send email using configured transporter
- * @param options - Email parameters
+ * Sends an email using the configured transporter.
+ *
+ * @param options - Email parameters (to, subject, html, text).
+ * @throws {AppError} 500 if the email cannot be dispatched by the transporter.
  */
 const sendEmail = async (options: EmailOptions): Promise<void> => {
   try {
@@ -23,24 +29,24 @@ const sendEmail = async (options: EmailOptions): Promise<void> => {
       to: options.to,
       subject: options.subject,
       text: options.text,
-      html: options.html
+      html: options.html,
     };
 
     const info = await transporter.sendMail(mailOptions);
-
-    console.log('📧 Email sent:', info.messageId);
-
+    console.log("📧 Email sent:", info.messageId);
   } catch (error) {
-    console.error('❌ Error sending email:', error);
-    throw new AppError('Failed to send email. Please try again later.', 500);
+    console.error("❌ Error sending email:", error);
+    throw new AppError("Failed to send email. Please try again later.", 500);
   }
 };
 
+
 /**
- * Send email verification email
- * @param email - User's email address
- * @param name - User's name
- * @param token - Verification token
+ * Sends an email verification link to a newly registered user.
+ *
+ * @param email - The user's email address.
+ * @param name  - The user's display name (used in the greeting).
+ * @param token - The plain-text verification token (not hashed).
  */
 const sendVerificationEmail = async (
   email: string,
@@ -48,21 +54,22 @@ const sendVerificationEmail = async (
   token: string
 ): Promise<void> => {
   const verificationUrl = `${process.env.FRONTEND_URL}/verify-email?token=${token}`;
-
   const html = verificationMailTemplate(name, verificationUrl);
 
   await sendEmail({
     to: email,
-    subject: 'Verify Your Email Address',
-    html
+    subject: "Verify Your Email Address",
+    html,
   });
 };
 
+
 /**
- * Send password reset email
- * @param email - User's email address
- * @param name - User's name
- * @param token - Reset token
+ * Sends a password reset link to the user's email address.
+ *
+ * @param email - The user's email address.
+ * @param name  - The user's display name (used in the greeting).
+ * @param token - The plain-text reset token (not hashed).
  */
 const sendPasswordResetEmail = async (
   email: string,
@@ -70,65 +77,70 @@ const sendPasswordResetEmail = async (
   token: string
 ): Promise<void> => {
   const resetUrl = `${process.env.FRONTEND_URL}/reset-password?token=${token}`;
-
   const html = passwordResetMailTemplate(name, resetUrl);
 
   await sendEmail({
     to: email,
-    subject: 'Reset Your Password',
-    html
+    subject: "Reset Your Password",
+    html,
   });
 };
 
+
 /**
- * Send password changed confirmation email
- * @param email - User's email address
- * @param name - User's name
+ * Sends a confirmation email after a successful password change.
+ *
+ * @param email - The user's email address.
+ * @param name  - The user's display name (used in the greeting).
  */
 const sendPasswordChangedEmail = async (
   email: string,
   name: string
 ): Promise<void> => {
-  const html =  passwordChangedMailTemplate(name);
+  const html = passwordChangedMailTemplate(name);
 
   await sendEmail({
     to: email,
-    subject: 'Your Password Has Been Changed',
-    html
+    subject: "Your Password Has Been Changed",
+    html,
   });
 };
 
+
 /**
- * Send email notification
+ * Sends an email notification to a user.
+ *
+ * The `recipientEmail` parameter is required because the `recipient` field on
+ * {@link INotification} is stored as an ObjectId reference and may not be
+ * populated at the call site.
+ *
+ * @param notification     - The notification document to render.
+ * @param recipientEmail   - The resolved email address of the recipient.
  */
 const sendEmailNotification = async (
-  notification: INotification
+  notification: INotification,
+  recipientEmail: string
 ): Promise<void> => {
-  try {
-    const user = notification.recipient as any;
+  const html = notificationEmailTemplate(
+    notification.title,
+    notification.message,
+    notification.actionUrl
+  );
 
-    const html = notificationEmailTemplate(
-      notification.title,
-      notification.message,
-      notification.actionUrl
-    );
+  await sendEmail({
+    to: recipientEmail,
+    subject: notification.title,
+    html,
+  });
 
-    await sendEmail({
-      to: user.email,
-      subject: notification.title,
-      html
-    });
-
-    console.log(`📧 Email notification sent to ${user.email}`);
-  } catch (error) {
-    console.error('Failed to send email notification:', error);
-  }
+  console.log(`📧 Email notification sent to ${recipientEmail}`);
 };
+
 
 export {
   sendEmail,
   sendVerificationEmail,
   sendPasswordResetEmail,
   sendPasswordChangedEmail,
-  sendEmailNotification
+  sendEmailNotification,
 };
