@@ -67,7 +67,7 @@ connectDB();
 
 // Body parsers
 app.use(express.json());
-app.use(express.urlencoded( { extended: true }));
+app.use(express.urlencoded({ extended: true }));
 
 // CORS
 app.use(cors({
@@ -88,7 +88,7 @@ app.use(generalLimiter);
 
 // Health check endpoint with typed request and response
 app.get('/', (_req: Request, res: Response): void => {
-  res.json({ 
+  res.json({
     success: true,
     message: 'Backend Master API with Real-time Notifications',
     version: '1.0.0',
@@ -114,9 +114,9 @@ app.use('/api/files', fileRoutes);
 app.use('/api/notifications', notificationRoutes);
 
 app.get('/api/test-error', (_req: Request, _res: Response, next: NextFunction) => {
-    const error = new Error('This is a test error') as Error & { statusCode: number };
-    error.statusCode = 400;
-    next(error);
+  const error = new Error('This is a test error') as Error & { statusCode: number };
+  error.statusCode = 400;
+  next(error);
 });
 
 
@@ -126,7 +126,7 @@ app.use(errorHandler);
 
 
 // Start server
-app.listen(PORT, (): void => {
+httpServer.listen(PORT, (): void => {
   console.log('=================================');
   console.log(`🚀 Server Status: RUNNING`);
   console.log(`📡 Port: ${PORT}`);
@@ -152,7 +152,7 @@ app.listen(PORT, (): void => {
   // Run cleanup daily at midnight
   setInterval(async () => {
     const now = new Date();
-    if (now.getHours() === 0 && now.getMinutes() === 0){
+    if (now.getHours() === 0 && now.getMinutes() === 0) {
       await cleanupOldActivities(90); // 90 days
     }
   }, 60000); // Check every minute
