@@ -1,137 +1,160 @@
+/**
+ * @module config/socket
+ * @description Socket.io server setup, authentication middleware, and connection management.
+ *
+ * Users are authenticated via a JWT passed in `socket.handshake.auth.token`.
+ * Each connected user joins a personal room (`user:<userId>`) so that targeted
+ * notifications can be emitted without broadcasting to all clients.
+ */
 import { Server as HTTPServer } from "http";
 import { Server as SocketIOServer, Socket } from "socket.io";
 import { verifyAccessToken } from "@/utils/jwt.js";
 
 
-// Store connected users
-const connectedUsers = new Map<string, string>(); // userId -> socketId
+/** Extends {@link Socket} with the authenticated user data attached by the auth middleware. */
+interface AuthenticatedSocket extends Socket {
+    userId: string;
+    userEmail: string;
+}
+
+/** Map of userId → socketId for all currently connected users. */
+const connectedUsers = new Map<string, string>();
 
 let io: SocketIOServer;
 
+
 /**
- * Initialize Socket.is server
+ * Bootstrap the Socket.io server on top of an existing HTTP server.
+ *
+ * Attaches an authentication middleware that verifies the bearer JWT sent
+ * in `socket.handshake.auth.token`. Authenticated sockets join the room
+ * `user:<userId>` for targeted delivery.
+ *
+ * @param httpServer - The Node.js HTTP server instance (created by `http.createServer`).
+ * @returns The initialised {@link SocketIOServer} instance.
  */
 const initializeSocket = (httpServer: HTTPServer): SocketIOServer => {
     io = new SocketIOServer(httpServer, {
         cors: {
-            origin: process.env.FRONTEND_URL || 'http://localhost:4000',
-            credentials: true
+            origin: process.env.FRONTEND_URL || "http://localhost:3000",
+            credentials: true,
         },
         pingTimeout: 60000,
-        pingInterval: 25000
+        pingInterval: 25000,
     });
 
 
-    // Authentication middleware
+    // ── Authentication middleware ───────────────────────────────────────────────
     io.use(async (socket: Socket, next) => {
         try {
-            // Get token from handshake
-            const token = socket.handshake.auth.token;
+            const token = socket.handshake.auth.token as string | undefined;
 
             if (!token) {
-                return next(new Error('Authentication token required'));
+                return next(new Error("Authentication token required"));
             }
 
-            // Verify token
             const decoded = verifyAccessToken(token);
 
-            // Attach user data to socket
-            (socket as any).userId = decoded.id;
-            (socket as any).userEmail = decoded.email;
+            const authed = socket as AuthenticatedSocket;
+            authed.userId = decoded.id;
+            authed.userEmail = decoded.email;
 
             next();
         } catch (error) {
-            console.error('Socket authentication error:', error);
-            next(new Error('Authentication failed'));
+            console.error("Socket authentication error:", error);
+            next(new Error("Authentication failed"));
         }
     });
 
-    // Connection handler
-    io.on('connection', (socket: Socket) => {
-        const userId = (socket as any).userId;
-        const userEmail = (socket as any).userEmail;
+
+    // ── Connection handler ─────────────────────────────────────────────────────
+    io.on("connection", (rawSocket: Socket) => {
+        const socket = rawSocket as AuthenticatedSocket;
+        const { userId, userEmail } = socket;
 
         console.log(`User connected: ${userEmail} (${socket.id})`);
 
-        // Store connection
+        // Store connection and join personal room
         connectedUsers.set(userId, socket.id);
-
-        // Emit connection success
-        socket.emit('connected', {
-            message: 'Connected to notification server',
-            userId
-        });
-
-        // Join user's personal room
         socket.join(`user:${userId}`);
 
-        // Handle disconnet
-        socket.on('disconnect', () => {
+        socket.emit("connected", {
+            message: "Connected to notification server",
+            userId,
+        });
+
+        // ── Disconnect ───────────────────────────────────────────────────────────
+        socket.on("disconnect", () => {
             console.log(`User disconnected: ${userEmail} (${socket.id})`);
             connectedUsers.delete(userId);
         });
 
-        // Handle mark notification as read
-        socket.on('mark-read', async (notificationId: string) => {
-            console.log(`Mark notification as read: ${notificationId}`);
-            // This will be handled by notification service
+        // ── Mark notification as read (client-side trigger) ──────────────────────
+        socket.on("mark-read", (notificationId: string) => {
+            // Actual DB update is handled via the REST endpoint (POST /notifications/:id/read).
+            // This event is available as a convenience hook for client implementations
+            // that prefer a WebSocket-only flow.
+            console.log(`Mark-read event received for notification: ${notificationId}`);
         });
 
-        // handle typing indicators (bonus feature)
-        socket.on('typing', (data: { room: string }) => {
-            socket.to(data.room).emit('user-typing', {
-                userId,
-                userEmail
-            });
+        // ── Typing indicators (bonus feature) ────────────────────────────────────
+        socket.on("typing", (data: { room: string }) => {
+            socket.to(data.room).emit("user-typing", { userId, userEmail });
         });
 
-        socket.on('stop-typing', (data: { room: string }) => {
-            socket.to(data.room).emit('user-stop-typing', {
-                userId,
-                userEmail
-            });
+        socket.on("stop-typing", (data: { room: string }) => {
+            socket.to(data.room).emit("user-stop-typing", { userId, userEmail });
         });
     });
 
     return io;
 };
 
+
 /**
- * Get Socket.io instance
+ * Returns the active {@link SocketIOServer} instance.
+ *
+ * @throws {Error} If called before {@link initializeSocket}.
+ * @returns The active Socket.io server.
  */
 const getIO = (): SocketIOServer => {
     if (!io) {
-        throw new Error('Socket.io not initialized');
+        throw new Error("Socket.io not initialized. Call initializeSocket() first.");
     }
     return io;
 };
 
+
 /**
- * Check if user is online
+ * Checks whether a user currently has an active WebSocket connection.
+ *
+ * @param userId - The user's MongoDB ObjectId string.
+ * @returns `true` if the user is connected, `false` otherwise.
  */
-const isUserOnline = (userId: string): boolean => {
-    return connectedUsers.has(userId);
-};
+const isUserOnline = (userId: string): boolean => connectedUsers.has(userId);
 
 
 /**
- * Get user's socket ID
+ * Returns the Socket.io socket ID for a connected user.
+ *
+ * @param userId - The user's MongoDB ObjectId string.
+ * @returns The socket ID string, or `undefined` if the user is not connected.
  */
-const getUserSocketId = (userId: string): string | undefined => {
-    return connectedUsers.get(userId)
-};
+const getUserSocketId = (userId: string): string | undefined => connectedUsers.get(userId);
+
 
 /**
- * Get all connected users
+ * Returns the list of user IDs that currently have an active connection.
+ *
+ * @returns An array of MongoDB ObjectId strings.
  */
-const getConnectedUsers = (): string[] => {
-    return Array.from(connectedUsers.keys());
-};
+const getConnectedUsers = (): string[] => Array.from(connectedUsers.keys());
+
 
 export {
     initializeSocket,
     getIO,
     isUserOnline,
     getUserSocketId,
-    getConnectedUsers
+    getConnectedUsers,
 };
